@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuite failures="0" time="0.016" errors="0" skipped="0" tests="1" name="com.latupa.stock.AppTest">
+  <properties>
+    <property name="java.runtime.name" value="Java(TM) SE Runtime Environment"/>
+    <property name="sun.boot.library.path" value="D:\Installed App\Java\jre7\bin"/>
+    <property name="java.vm.version" value="23.6-b04"/>
+    <property name="java.vm.vendor" value="Oracle Corporation"/>
+    <property name="java.vendor.url" value="http://java.oracle.com/"/>
+    <property name="path.separator" value=";"/>
+    <property name="java.vm.name" value="Java HotSpot(TM) 64-Bit Server VM"/>
+    <property name="file.encoding.pkg" value="sun.io"/>
+    <property name="user.script" value=""/>
+    <property name="user.country" value="CN"/>
+    <property name="sun.java.launcher" value="SUN_STANDARD"/>
+    <property name="sun.os.patch.level" value="Service Pack 1"/>
+    <property name="java.vm.specification.name" value="Java Virtual Machine Specification"/>
+    <property name="user.dir" value="D:\virtual machine\virtual disk\git_code\stock"/>
+    <property name="java.runtime.version" value="1.7.0_11-b21"/>
+    <property name="java.awt.graphicsenv" value="sun.awt.Win32GraphicsEnvironment"/>
+    <property name="basedir" value="D:\virtual machine\virtual disk\git_code\stock"/>
+    <property name="java.endorsed.dirs" value="D:\Installed App\Java\jre7\lib\endorsed"/>
+    <property name="os.arch" value="amd64"/>
+    <property name="surefire.real.class.path" value="C:\Users\ADMINI~1\AppData\Local\Temp\surefirebooter2534514663861409857.jar"/>
+    <property name="java.io.tmpdir" value="C:\Users\ADMINI~1\AppData\Local\Temp\"/>
+    <property name="line.separator" value="
+"/>
+    <property name="java.vm.specification.vendor" value="Oracle Corporation"/>
+    <property name="user.variant" value=""/>
+    <property name="os.name" value="Windows 7"/>
+    <property name="sun.jnu.encoding" value="GBK"/>
+    <property name="java.library.path" value="D:\Installed App\Java\jre7\bin;C:\Windows\Sun\Java\bin;C:\Windows\system32;C:\Windows;C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem;C:\Windows\System32\WindowsPowerShell\v1.0\;D:\Installed App\Java\jdk1.7.0_11\bin;D:\Installed App\Java\jdk1.7.0_11\jre\bin;."/>
+    <property name="surefire.test.class.path" value="D:\virtual machine\virtual disk\git_code\stock\target\test-classes;D:\virtual machine\virtual disk\git_code\stock\target\classes;C:\Users\Administrator\.m2\repository\junit\junit\3.8.1\junit-3.8.1.jar;C:\Users\Administrator\.m2\repository\mysql\mysql-connector-java\5.1.21\mysql-connector-java-5.1.21.jar;"/>
+    <property name="java.specification.name" value="Java Platform API Specification"/>
+    <property name="java.class.version" value="51.0"/>
+    <property name="sun.management.compiler" value="HotSpot 64-Bit Tiered Compilers"/>
+    <property name="os.version" value="6.1"/>
+    <property name="user.home" value="C:\Users\Administrator"/>
+    <property name="user.timezone" value=""/>
+    <property name="java.awt.printerjob" value="sun.awt.windows.WPrinterJob"/>
+    <property name="java.specification.version" value="1.7"/>
+    <property name="file.encoding" value="GBK"/>
+    <property name="user.name" value="Administrator"/>
+    <property name="java.class.path" value="D:\virtual machine\virtual disk\git_code\stock\target\test-classes;D:\virtual machine\virtual disk\git_code\stock\target\classes;C:\Users\Administrator\.m2\repository\junit\junit\3.8.1\junit-3.8.1.jar;C:\Users\Administrator\.m2\repository\mysql\mysql-connector-java\5.1.21\mysql-connector-java-5.1.21.jar;"/>
+    <property name="java.vm.specification.version" value="1.7"/>
+    <property name="sun.arch.data.model" value="64"/>
+    <property name="java.home" value="D:\Installed App\Java\jre7"/>
+    <property name="sun.java.command" value="C:\Users\ADMINI~1\AppData\Local\Temp\surefirebooter2534514663861409857.jar C:\Users\ADMINI~1\AppData\Local\Temp\surefire1584191844160846950tmp C:\Users\ADMINI~1\AppData\Local\Temp\surefire2185749903178989171tmp"/>
+    <property name="java.specification.vendor" value="Oracle Corporation"/>
+    <property name="user.language" value="zh"/>
+    <property name="awt.toolkit" value="sun.awt.windows.WToolkit"/>
+    <property name="java.vm.info" value="mixed mode"/>
+    <property name="java.version" value="1.7.0_11"/>
+    <property name="java.ext.dirs" value="D:\Installed App\Java\jre7\lib\ext;C:\Windows\Sun\Java\lib\ext"/>
+    <property name="sun.boot.class.path" value="D:\Installed App\Java\jre7\lib\resources.jar;D:\Installed App\Java\jre7\lib\rt.jar;D:\Installed App\Java\jre7\lib\sunrsasign.jar;D:\Installed App\Java\jre7\lib\jsse.jar;D:\Installed App\Java\jre7\lib\jce.jar;D:\Installed App\Java\jre7\lib\charsets.jar;D:\Installed App\Java\jre7\lib\jfr.jar;D:\Installed App\Java\jre7\classes"/>
+    <property name="java.vendor" value="Oracle Corporation"/>
+    <property name="localRepository" value="C:\Users\Administrator\.m2\repository"/>
+    <property name="file.separator" value="\"/>
+    <property name="java.vendor.url.bug" value="http://bugreport.sun.com/bugreport/"/>
+    <property name="sun.cpu.endian" value="little"/>
+    <property name="sun.io.unicode.encoding" value="UnicodeLittle"/>
+    <property name="sun.desktop" value="windows"/>
+    <property name="sun.cpu.isalist" value="amd64"/>
+  </properties>
+  <testcase time="0.003" classname="com.latupa.stock.AppTest" name="testApp"/>
+</testsuite>
