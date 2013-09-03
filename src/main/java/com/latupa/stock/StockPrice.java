@@ -666,7 +666,7 @@ public class StockPrice {
 				if (num % 100 == 0) {
 					//存入数据库
 					log.info("    store code to db");
-					StoreStockPriceToDB(ALL_STOCK_CODE, false);
+					//StoreStockPriceToDB(ALL_STOCK_CODE, false);
 					
 					stock_map.clear();
 				}
@@ -677,7 +677,7 @@ public class StockPrice {
 		
 		//剩下的存入数据库
 		log.info("    store code to db");
-		StoreStockPriceToDB(ALL_STOCK_CODE, false);
+		//StoreStockPriceToDB(ALL_STOCK_CODE, false);
 		
 		stock_map.clear();
 
@@ -1086,8 +1086,8 @@ public class StockPrice {
 			System.exit(0);
 		}
 		
-		//DBInst dbInst	= new DBInst("jdbc:mysql://localhost:3306/stock", "latupa", "latupa");
-		DBInst dbInst	= new DBInst("jdbc:mysql://192.168.116.153:3306/stock", "latupa", "latupa");
+		DBInst dbInst	= new DBInst("jdbc:mysql://localhost:3306/stock_new", "latupa", "latupa");
+		//DBInst dbInst	= new DBInst("jdbc:mysql://192.168.116.153:3306/stock_new", "latupa", "latupa");
 		
 		StockPrice sp = new StockPrice(dbInst);
 		
