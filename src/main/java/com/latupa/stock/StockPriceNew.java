@@ -194,6 +194,68 @@ public class StockPriceNew {
 	}
 	
 	/**
+	 * 解析大智慧PWR文件中的一个股票的所有除权数据
+	 * @param dis
+	 * @param code
+	 * @param market
+	 * @return byte4 最后读取的4个字节
+	 * @throws IOException
+	 * @throws ParseException
+	 */
+	public byte[] ParseExDividePWR(DataInputStream dis, String code, String market) throws IOException, ParseException {
+		
+		byte[] byte4 = new byte[4];
+		
+		String sdate;
+		Double give;
+		Double pay;
+		Double price;
+		Double profit;
+		long timestamp;
+		
+		Date date;
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
+		
+		/**
+		 * |4byte|4byte|4byte|4byte|4byte|
+		 *   time  give  pay  price profit
+		 */
+		
+		//0-3
+		dis.read(byte4);
+		while (getInt(byte4) != 0xFFFFFFFF) {
+			
+			timestamp = byte2int(byte4);
+			date = new Date(timestamp * 1000);
+			sdate = sdf.format(date);
+			
+			//4-7
+			dis.read(byte4);
+			give = Double.parseDouble(getFloat(byte4) + "");
+			
+			//4-7
+			dis.read(byte4);
+			pay = Double.parseDouble(getFloat(byte4) + "");
+			
+			//4-7
+			dis.read(byte4);
+			price = Double.parseDouble(getFloat(byte4) + "");
+			
+			//4-7
+			dis.read(byte4);
+			profit = Double.parseDouble(getFloat(byte4) + "");
+			
+          
+			System.out.println("date:" + sdate + " give:" + give + " pay:" + pay + " price:" + price + " profit:" + profit);
+			
+			byte4 = ParseExDividePWR(dis, code, market);
+
+		}
+		
+		return byte4;
+	}
+	
+	/**
 	 * 从大智慧导入股票的历史价格数据（DAD），是原始数据
 	 * 获取方式：大智慧-工具-数据管理-生成数据
 	 * @param file_name
@@ -364,7 +426,81 @@ public class StockPriceNew {
 		}
 	}
 	
-	
+	/**
+	 * 导入大智慧除权数据文件SPLIT.PWR
+	 * 获取方式：http://www.kboyi.com/post/1.html
+	 * @param file_name
+	 * @param clean 如果为true则先清空表
+	 * @throws IOException
+	 * @throws ParseException
+	 */
+	public void ImportExDivideData(String file_name, boolean clean) throws IOException, ParseException {
+		
+		DataInputStream dis = new DataInputStream(new FileInputStream(new File(file_name)));
+		
+		byte[] byte2 = new byte[2];
+		byte[] byte4 = new byte[4];
+		byte[] byte6 = new byte[6];
+		byte[] byte8 = new byte[8];
+		byte[] byte12 = new byte[12];
+		byte[] byte16 = new byte[16];
+		
+		String market;
+		String code;
+		
+		/**
+		 * |4byte|2byte|6byte|8byte|
+		 *   tag  market code none
+		 */
+		dis.read(byte8);
+		while (dis.available() > 0) {
+			
+			// new stock
+			dis.read(byte4);
+			while (getInt(byte4) == 0xFFFFFFFF) {
+				
+				//4-5
+				dis.read(byte2);
+				if (getShort(byte2) == 0x0000) {
+					break;
+				}
+				market = new String(byte2);
+				market = market.toLowerCase();
+				
+				//记录下涉及到的市场列表，用于入库时候清理数据用
+				if (!market_set.contains(market)) {
+					market_set.add(market);
+				}
+				
+				//6-11
+				dis.read(byte6);
+				
+				//code由小于等于6个字节构成，某个byte为0x00标识结束
+				boolean byte_is_zero = false;
+				for (int i = 0; i <= byte6.length - 1; i++) {
+					if (byte6[i] == 0x00) {
+						byte_is_zero = true;
+					}
+					
+					if (byte_is_zero == true) {
+						byte6[i] = 0x00;
+					}
+				}
+				code = new String(byte6);
+				code = code.trim();
+				
+				System.out.println("market:" + market + " code:" + code);
+				
+				dis.read(byte8);
+				
+
+				
+			}
+		}
+		
+		dis.close();
+		
+	}
 	
 	public static void main(String[] args) {
 
@@ -384,6 +520,21 @@ public class StockPriceNew {
 			log.info("start import stock price from " + file_name);
 			try {
 				sp.ImportHistoryPrice(file_name, true);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (ParseException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+
+		}
+		else if (args[0].equals("-d")) {
+			String file_name = args[1];
+			
+			log.info("start import exdivide data from " + file_name);
+			try {
+				sp.ImportExDivideData(file_name, true);
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
