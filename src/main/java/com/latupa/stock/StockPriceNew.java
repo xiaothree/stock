@@ -417,7 +417,8 @@ public class StockPriceNew {
 
 	/**
 	 * 导入大智慧除权数据文件SPLIT.PWR
-	 * 获取方式：http://www.kboyi.com/post/1.html
+	 * 获取方式：1.http://www.kboyi.com/post/1.html
+	 *          2.dzh2\Download\PWR，通过大智慧下载数据获取
 	 * @param file_name
 	 * @param clean 如果为true则先清空表
 	 * @throws IOException
