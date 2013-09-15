@@ -540,7 +540,8 @@ public class StockPriceNew {
 	
 	public static void usage() {
 		System.out.println("usage as follow:");
-		System.out.println("    -f dzh file");
+		System.out.println("    -f dzh dad file");
+		System.out.println("    -d dzh pwr file");
 		System.out.println("    -e ex-divide file. such as sh_000001");
 		System.out.println("		-m market");
 		System.out.println("		-c code");
