@@ -182,68 +182,6 @@ public class StockPriceNew {
 	}
 	
 	/**
-	 * 解析大智慧PWR文件中的一个股票的所有除权数据
-	 * @param dis
-	 * @param code
-	 * @param market
-	 * @return byte4 最后读取的4个字节
-	 * @throws IOException
-	 * @throws ParseException
-	 */
-	public byte[] ParseExDividePWR(DataInputStream dis, String code, String market) throws IOException, ParseException {
-		
-		byte[] byte4 = new byte[4];
-		
-		String sdate;
-		Double give;
-		Double pay;
-		Double price;
-		Double profit;
-		long timestamp;
-		
-		Date date;
-		SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
-		
-		/**
-		 * |4byte|4byte|4byte|4byte|4byte|
-		 *   time  give  pay  price profit
-		 */
-		
-		//0-3
-		dis.read(byte4);
-		while (getInt(byte4) != 0xFFFFFFFF) {
-			
-			timestamp = byte2int(byte4);
-			date = new Date(timestamp * 1000);
-			sdate = sdf.format(date);
-			
-			//4-7
-			dis.read(byte4);
-			give = Double.parseDouble(getFloat(byte4) + "");
-			
-			//4-7
-			dis.read(byte4);
-			pay = Double.parseDouble(getFloat(byte4) + "");
-			
-			//4-7
-			dis.read(byte4);
-			price = Double.parseDouble(getFloat(byte4) + "");
-			
-			//4-7
-			dis.read(byte4);
-			profit = Double.parseDouble(getFloat(byte4) + "");
-			
-          
-			System.out.println("date:" + sdate + " give:" + give + " pay:" + pay + " price:" + price + " profit:" + profit);
-			
-			byte4 = ParseExDividePWR(dis, code, market);
-
-		}
-		
-		return byte4;
-	}
-	
-	/**
 	 * 从大智慧导入股票的历史价格数据（DAD），是原始数据
 	 * 获取方式：大智慧-工具-数据管理-生成数据
 	 * @param file_name
