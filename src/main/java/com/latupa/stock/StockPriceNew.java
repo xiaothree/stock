@@ -1,30 +1,18 @@
 package com.latupa.stock;
 
-import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.URL;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.TreeMap;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
-import com.latupa.stock.StockPrice.ExDivide;
-import com.latupa.stock.StockPrice.PriceRecord;
 
 /**
  * 处理所有和股票价格相关的工作
@@ -50,10 +38,10 @@ public class StockPriceNew {
 	private static final String STOCK_PRICE_TABLE_PRE = "stock_price__";
 	
 	//股票除权后价格表名前缀
-	private static final String STOCK_PRICE_ED_TABLE_PRE = "stock_price_ed__";
+	//private static final String STOCK_PRICE_ED_TABLE_PRE = "stock_price_ed__";
 	
 	//股票除权表名前缀
-	private static final String STOCK_EXDIVIDE_TABLE_PRE = "stock_exdivide__";
+	//private static final String STOCK_EXDIVIDE_TABLE_PRE = "stock_exdivide__";
 	
 	//数据库连接
 	public DBInst dbInst;  
@@ -137,7 +125,7 @@ public class StockPriceNew {
 		dis.read(byte4);
 		while (getInt(byte4) != 0xFFFFFFFF) {
 			
-			timestamp = byte2int(byte4);
+			timestamp = getInt(byte4);
 			date = new Date(timestamp * 1000);
 			sdate = sdf.format(date);
 			
@@ -427,8 +415,72 @@ public class StockPriceNew {
 	}
 	
 	/**
+	 * 解析大智慧PWR文件中的一个股票的所有除权数据
+	 * @param dis
+	 * @param code
+	 * @param market
+	 * @return byte4 最后读取的4个字节
+	 * @throws IOException
+	 * @throws ParseException
+	 */
+	public byte[] ParseExDividePWR(DataInputStream dis, String code, String market) throws IOException, ParseException {
+		
+		byte[] byte4 = new byte[4];
+		
+		String sdate;
+		Double give;
+		Double right;
+		Double right_price;
+		Double bonus;
+		long timestamp;
+		
+		Date date;
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
+		
+		/**
+		 * |4byte|4byte|4byte|4byte|4byte|
+		 *   time  give  pay  price profit
+		 */
+		
+		//0-3
+		dis.read(byte4);
+		while ((dis.available() > 0) && (getInt(byte4) != 0xFFFFFFFF)) {
+			
+			timestamp = byte2int(byte4);
+			date = new Date(timestamp * 1000);
+			sdate = sdf.format(date);
+			
+			//4-7
+			dis.read(byte4);
+			give = Double.parseDouble(getFloat(byte4) + "");
+			
+			//4-7
+			dis.read(byte4);
+			right = Double.parseDouble(getFloat(byte4) + "");
+			
+			//4-7
+			dis.read(byte4);
+			right_price = Double.parseDouble(getFloat(byte4) + "");
+			
+			//4-7
+			dis.read(byte4);
+			bonus = Double.parseDouble(getFloat(byte4) + "");
+			
+          
+			System.out.println("date:" + sdate + " give:" + give + " right:" + right + " right_price:" + right_price + " bonus:" + bonus);
+			
+			dis.read(byte4);
+
+		}
+		
+		return byte4;
+	}
+
+
+	/**
 	 * 导入大智慧除权数据文件SPLIT.PWR
-	 * 获取方式：http://www.kboyi.com/post/1.html
+	 * 获取方式：1.http://www.kboyi.com/post/1.html
+	 *          2.dzh2\Download\PWR，通过大智慧下载数据获取
 	 * @param file_name
 	 * @param clean 如果为true则先清空表
 	 * @throws IOException
@@ -442,9 +494,7 @@ public class StockPriceNew {
 		byte[] byte4 = new byte[4];
 		byte[] byte6 = new byte[6];
 		byte[] byte8 = new byte[8];
-		byte[] byte12 = new byte[12];
-		byte[] byte16 = new byte[16];
-		
+
 		String market;
 		String code;
 		
@@ -457,7 +507,7 @@ public class StockPriceNew {
 			
 			// new stock
 			dis.read(byte4);
-			while (getInt(byte4) == 0xFFFFFFFF) {
+			while ((dis.available() > 0) && (getInt(byte4) == 0xFFFFFFFF)) {
 				
 				//4-5
 				dis.read(byte2);
@@ -493,8 +543,7 @@ public class StockPriceNew {
 				
 				dis.read(byte8);
 				
-
-				
+				byte4 = ParseExDividePWR(dis, code, market);
 			}
 		}
 		
@@ -542,7 +591,6 @@ public class StockPriceNew {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-
 		}
 		else {
 			StockPriceNew.usage();
