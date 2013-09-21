@@ -31,8 +31,14 @@ public class StockPriceNew {
 	//记录股票历史价格{{market,code}, {date, price}}
 	public HashMap<String, HashMap<String, PriceRecord>> stock_map = new HashMap<String, HashMap<String, PriceRecord>>();
 	
-	//记录股票涉及的市场列表
-	private HashSet<String> market_set = new HashSet<String>();
+	//记录股票除权信息{{market,code}, {date, ex-divide}}
+	public HashMap<String, HashMap<String, ExDivide>> ex_divide_map = new HashMap<String, HashMap<String, ExDivide>>();
+	
+	//记录股票价格涉及的市场列表
+	private HashSet<String> stock_price_market_set = new HashSet<String>();
+	
+	//记录股票除权涉及的市场列表
+	private HashSet<String> stock_ex_divide_market_set = new HashSet<String>();	
 	
 	//股票价格表名前缀
 	private static final String STOCK_PRICE_TABLE_PRE = "stock_price__";
@@ -41,7 +47,7 @@ public class StockPriceNew {
 	//private static final String STOCK_PRICE_ED_TABLE_PRE = "stock_price_ed__";
 	
 	//股票除权表名前缀
-	//private static final String STOCK_EXDIVIDE_TABLE_PRE = "stock_exdivide__";
+	private static final String STOCK_EXDIVIDE_TABLE_PRE = "stock_exdivide__";
 	
 	//数据库连接
 	public DBInst dbInst;  
@@ -52,10 +58,10 @@ public class StockPriceNew {
 	}
 	
 	public class ExDivide {
-		double give;
-		double right;
-		double right_price;
-		double bonus;
+		double give;		//送股
+		double right;		//配股
+		double right_price;	//配股价
+		double bonus;		//分红
 	}
 	
 	public StockPriceNew(DBInst dbInst) {
@@ -228,8 +234,8 @@ public class StockPriceNew {
 				market = market.toLowerCase();
 				
 				//记录下涉及到的市场列表，用于入库时候清理数据用
-				if (!market_set.contains(market)) {
-					market_set.add(market);
+				if (!stock_price_market_set.contains(market)) {
+					stock_price_market_set.add(market);
 				}
 				
 				//6-11
@@ -292,7 +298,7 @@ public class StockPriceNew {
 	public void StoreStockPriceToDB(boolean clean) {
 		log.info("start store stock price to db...");
 		
-		for (String market : market_set.toArray(new String[0])) {
+		for (String market : stock_price_market_set.toArray(new String[0])) {
 			//创建表
 			String table_name = STOCK_PRICE_TABLE_PRE + market;
 			String sql = "create table if not exists " + table_name + 
@@ -337,16 +343,83 @@ public class StockPriceNew {
 			for (String day : stock_price.keySet().toArray(new String[0])) {
 				PriceRecord pr = stock_price.get(day);
 				String sql = "insert into " + table_name + 
-						"(code, name, day, open, close) values " +
+						"(`code`, `name`, `day`, `open`, `close`) values " +
 						"('" + code + "', " + 
 						"'" + name + "', " + 
 						"'" + day + "', " + 
 						pr.open + "," + 
 						pr.close + ") " +
 						"ON DUPLICATE KEY UPDATE " +
-						"name = '" + name + "', " + 
-						"open = " + pr.open + "," +
-						"close = " + pr.close;
+						"`name` = '" + name + "', " + 
+						"`open` = " + pr.open + "," +
+						"`close` = " + pr.close;
+				dbInst.updateSQL(sql);
+			}
+		}
+	}
+	
+	/**
+	 * 把内存中exdivide_map的除权数据存入到数据库中
+	 * @param clean 如果为true则先清空表
+	 */
+	public void StoreExDivideToDB(boolean clean) {
+		log.info("start store ex-divide to db...");
+		
+		for (String market : stock_ex_divide_market_set.toArray(new String[0])) {
+			//创建表
+			String table_name = STOCK_EXDIVIDE_TABLE_PRE + market;
+			String sql = "create table if not exists " + table_name + 
+					"(" +
+					"`code` varchar(32) not null default '', " +
+					"`day` DATE not null default '0000-00-00', " +
+					"`give` double NOT NULL default '0', " +
+					"`right` double NOT NULL default '0', " +
+					"`right_price` double NOT NULL default '0', " +
+					"`bonus` double NOT NULL default '0', " +
+					"PRIMARY KEY (`code`, `day`)" +
+					") ENGINE=InnoDB DEFAULT CHARSET=utf8";	
+			
+			log.info("	" + sql);
+			dbInst.updateSQL(sql);
+			
+			//清理历史数据
+			if (clean) {
+				sql = "delete from " + table_name;
+				log.info("	" + sql);
+				dbInst.updateSQL(sql);
+			}
+		}
+		
+		int stock_num = 0;
+		//key:market+code, value:date->ExDivide
+		for (String key : ex_divide_map.keySet().toArray(new String[0])) {
+			
+			String arrs[] = key.split(",");
+			String market = arrs[0];
+			String code = arrs[1];
+			
+			String table_name = STOCK_EXDIVIDE_TABLE_PRE + market;
+			
+			stock_num++;
+			log.info("	store " + stock_num + ":" + market + "-" + code);
+			
+			TreeMap<String, ExDivide> ex_divide = new TreeMap<String, ExDivide>(ex_divide_map.get(key));
+			//key:date, value:ExDivide
+			for (String day : ex_divide.keySet().toArray(new String[0])) {
+				ExDivide ed = ex_divide.get(day);
+				String sql = "insert into " + table_name + 
+						"(`code`, `day`, `give`, `right`, `right_price`, `bonus`) values " +
+						"('" + code + "', " + 
+						"'" + day + "', " + 
+						ed.give + "," + 
+						ed.right + "," +
+						ed.right_price + "," +
+						ed.bonus + ") " +
+						"ON DUPLICATE KEY UPDATE " +
+						"`give` = " + ed.give + "," +
+						"`right` = " + ed.right + "," +
+						"`right_price` = " + ed.right_price + "," +
+						"`bonus` = " + ed.bonus;
 				dbInst.updateSQL(sql);
 			}
 		}
@@ -366,23 +439,24 @@ public class StockPriceNew {
 		byte[] byte4 = new byte[4];
 		
 		String sdate;
-		Double give;
-		Double right;
-		Double right_price;
-		Double bonus;
 		long timestamp;
+		
+		//date->ExDivide
+		HashMap<String, ExDivide> ex_divide = new HashMap<String, ExDivide>();
 		
 		Date date;
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
 		
 		/**
 		 * |4byte|4byte|4byte|4byte|4byte|
-		 *   time  give  pay  price profit
+		 *   time  give  right  right_price bonus
 		 */
 		
 		//0-3
 		dis.read(byte4);
 		while ((dis.available() > 0) && (getInt(byte4) != 0xFFFFFFFF)) {
+			
+			ExDivide ed = new ExDivide();
 			
 			timestamp = byte2int(byte4);
 			date = new Date(timestamp * 1000);
@@ -390,26 +464,30 @@ public class StockPriceNew {
 			
 			//4-7
 			dis.read(byte4);
-			give = Double.parseDouble(getFloat(byte4) + "");
+			ed.give = Double.parseDouble(getFloat(byte4) + "");
 			
 			//4-7
 			dis.read(byte4);
-			right = Double.parseDouble(getFloat(byte4) + "");
+			ed.right = Double.parseDouble(getFloat(byte4) + "");
 			
 			//4-7
 			dis.read(byte4);
-			right_price = Double.parseDouble(getFloat(byte4) + "");
+			ed.right_price = Double.parseDouble(getFloat(byte4) + "");
 			
 			//4-7
 			dis.read(byte4);
-			bonus = Double.parseDouble(getFloat(byte4) + "");
+			ed.bonus = Double.parseDouble(getFloat(byte4) + "");
 			
-          
-			System.out.println("date:" + sdate + " give:" + give + " right:" + right + " right_price:" + right_price + " bonus:" + bonus);
+			ex_divide.put(sdate, ed);
+			
+			System.out.println("date:" + sdate + " give:" + ed.give + " right:" + ed.right + " right_price:" + ed.right_price + " bonus:" + ed.bonus);
 			
 			dis.read(byte4);
 
 		}
+		
+		String key = market + "," + code;
+		ex_divide_map.put(key, ex_divide);
 		
 		return byte4;
 	}
@@ -456,8 +534,8 @@ public class StockPriceNew {
 				market = market.toLowerCase();
 				
 				//记录下涉及到的市场列表，用于入库时候清理数据用
-				if (!market_set.contains(market)) {
-					market_set.add(market);
+				if (!stock_ex_divide_market_set.contains(market)) {
+					stock_ex_divide_market_set.add(market);
 				}
 				
 				//6-11
@@ -487,6 +565,10 @@ public class StockPriceNew {
 		
 		dis.close();
 		
+		//存入数据库
+		StoreExDivideToDB(clean);
+				
+		ex_divide_map.clear();
 	}
 	
 	public static void main(String[] args) {
@@ -497,7 +579,7 @@ public class StockPriceNew {
 		}
 		
 		//DBInst dbInst	= new DBInst("jdbc:mysql://localhost:3306/stock_new", "latupa", "latupa");
-		DBInst dbInst	= new DBInst("jdbc:mysql://192.168.153.135:3306/stock_new", "latupa", "latupa");
+		DBInst dbInst	= new DBInst("jdbc:mysql://192.168.153.136:3306/stock_new", "latupa", "latupa");
 		
 		StockPriceNew sp = new StockPriceNew(dbInst);
 		
