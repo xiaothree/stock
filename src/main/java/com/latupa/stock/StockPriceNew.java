@@ -4,8 +4,11 @@ import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -13,6 +16,8 @@ import java.util.TreeMap;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+
+import com.latupa.stock.StockPrice.ExDivide;
 
 /**
  * 处理所有和股票价格相关的工作
@@ -44,10 +49,13 @@ public class StockPriceNew {
 	private static final String STOCK_PRICE_TABLE_PRE = "stock_price__";
 	
 	//股票除权后价格表名前缀
-	//private static final String STOCK_PRICE_ED_TABLE_PRE = "stock_price_ed__";
+	private static final String STOCK_PRICE_ED_TABLE_PRE = "stock_price_ed__";
 	
 	//股票除权表名前缀
 	private static final String STOCK_EXDIVIDE_TABLE_PRE = "stock_exdivide__";
+	
+	//所有股票市场
+	private static final String STOCK_MARKET_ALL = "all";
 	
 	//数据库连接
 	public DBInst dbInst;  
@@ -189,7 +197,7 @@ public class StockPriceNew {
 	
 	/**
 	 * 从大智慧导入股票的历史价格数据（DAD），是原始数据
-	 * 获取方式：大智慧-工具-数据管理-生成数据
+	 * 获取方式：大智慧-常用工具-数据管理中心-生成数据
 	 * @param file_name
 	 * @param clean 如果为true则先清空表
 	 * @throws IOException
@@ -353,6 +361,101 @@ public class StockPriceNew {
 						"`name` = '" + name + "', " + 
 						"`open` = " + pr.open + "," +
 						"`close` = " + pr.close;
+				dbInst.updateSQL(sql);
+			}
+		}
+	}
+	
+	/**
+	 * 根据除权数据修改股票历史价格
+	 * @param market， 如果market为all，则根据所有市场的除权数据，更新对应的股票价格数据
+	 * @throws SQLException 
+	 */
+	public void UpdateStockPriceByExDivide(String market) throws SQLException {
+		
+		log.info("start update stock price by ex-divide! market:" + market);
+		
+		String sql;
+		
+		//获取所有除权数据市场的表
+		ArrayList<String> table_list = new ArrayList<String>();
+		
+		sql = "show tables like '" + STOCK_EXDIVIDE_TABLE_PRE + "%'";
+		log.info(sql);
+		ResultSet rs = dbInst.selectSQL(sql);
+		
+		if (rs == null) {
+			log.info("没有可供处理的除权数据表:" + STOCK_EXDIVIDE_TABLE_PRE);
+			return;
+		}
+		
+		while (rs.next()) {
+			String table = rs.getString(1);
+			System.out.println(table);
+			table_list.add(table);
+		}
+		
+		rs.close();
+		
+		for (int i = 0; i < table_list.size(); i++) {
+			String ex_table = table_list.get(i);
+			
+			log.info("开始处理除权表:" + ex_table);
+			
+			//如果指定了某个市场
+			if (!market.equals(STOCK_MARKET_ALL)) {
+				if (!ex_table.endsWith(market)) {
+					continue;
+				}
+			}
+			
+			String stock_table = ex_table.replace(STOCK_EXDIVIDE_TABLE_PRE, STOCK_PRICE_TABLE_PRE);
+			String stock_ed_table = ex_table.replace(STOCK_EXDIVIDE_TABLE_PRE, STOCK_PRICE_ED_TABLE_PRE);
+			
+			System.out.println("ex_table = " + ex_table + ", stock_table = " + stock_table + ", stock_ed_table = " + stock_ed_table);
+			
+			//1. 先删除除权后的股票价格表
+			sql = "drop table if exists " + stock_ed_table;
+			log.info(sql);
+			dbInst.updateSQL(sql);
+			
+			//2. 创建除权后的股票价格表（从历史股票价格表导入）
+			sql = "create table " + stock_ed_table + " select * from " + stock_table;
+			log.info(sql);
+			dbInst.updateSQL(sql);
+			
+			//3. 根据除权数据文件，更新股票价格表
+			sql = "select `code` as `code`, `day` as `day`, `give` as `give`, `right` as `right`, `right_price` as `right_price`, `bonus` as `bonus` from " + ex_table + " order by code, day";
+			log.info(sql);
+			rs = dbInst.selectSQL(sql);
+			
+			while (rs.next()) {
+				String code = rs.getString("code");
+				String day  = rs.getString("day");
+				double give = rs.getDouble("give");
+				double right = rs.getDouble("right");
+				double right_price = rs.getDouble("right_price");
+				double bonus = rs.getDouble("bonus");
+				
+//				//送股、分红
+//				if (give != 0 || bonus !=0) {
+//					sql = "update " + ed_table_name + " set open = open / " + String.valueOf(1 + give) + " - " + String.valueOf(bonus) +
+//							", close = close / " + String.valueOf(1 + give) + " - " + String.valueOf(bonus) +
+//							" where date < '" + date + "'"; 
+//				}
+//				//配股
+//				else if (right != 0) {
+//					sql = "update " + ed_table_name + " set open = (open + " + String.valueOf(right_price * right) + ") / " + String.valueOf(1 + right) +
+//							", close = (close + " + String.valueOf(right_price * right) + ") / " + String.valueOf(1 + right) +
+//							" where date < '" + date + "'"; 
+//				}
+				
+				//除权价=(收盘价+配股比例×配股价-每股所派现金)÷(1+送股比例+配股比例)
+				sql = "update " + stock_ed_table + " set open = (open + " + String.valueOf(right_price * right) + " - " + String.valueOf(bonus) + ") / " + String.valueOf(1 + give + right) +
+						", close = (close + " + String.valueOf(right_price * right) + " - " + String.valueOf(bonus) + ") / " + String.valueOf(1 + give + right) +
+						" where code = '" + code + "' and day < '" + day + "'"; 
+				
+				log.info(sql);
 				dbInst.updateSQL(sql);
 			}
 		}
@@ -579,7 +682,7 @@ public class StockPriceNew {
 		}
 		
 		//DBInst dbInst	= new DBInst("jdbc:mysql://localhost:3306/stock_new", "latupa", "latupa");
-		DBInst dbInst	= new DBInst("jdbc:mysql://192.168.153.136:3306/stock_new", "latupa", "latupa");
+		DBInst dbInst	= new DBInst("jdbc:mysql://192.168.153.137:3306/stock_new", "latupa", "latupa");
 		
 		StockPriceNew sp = new StockPriceNew(dbInst);
 		
@@ -612,6 +715,17 @@ public class StockPriceNew {
 				e.printStackTrace();
 			}
 		}
+		else if (args[0].equals("-e")) {
+			String market = args[1];
+			
+			log.info("update stock price by exdivide data for market :" + market);
+			try {
+				sp.UpdateStockPriceByExDivide(market);
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} 
+		}
 		else {
 			StockPriceNew.usage();
 			System.exit(0);
@@ -624,6 +738,7 @@ public class StockPriceNew {
 		System.out.println("usage as follow:");
 		System.out.println("    -f dzh dad file");
 		System.out.println("    -d dzh pwr file");
+		System.out.println("    -e update stock price by ex-divide data");
 		System.out.println("    -e ex-divide file. such as sh_000001");
 		System.out.println("		-m market");
 		System.out.println("		-c code");
