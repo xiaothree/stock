@@ -1,5 +1,5 @@
 #!/bin/sh
 
-date=`date +%Y%m%d`
+date=`date +%Y%m%d%H%M%S`
 
-tar czvf /home/latupa/mysql_stock_bak.$date /home/latupa/myspace/mysql_data/stock
+/usr/bin/mysqldump -ulatupa -platupa stock_new > /home/latupa/exchange/mysql_bak/stock_new.sql.$date
