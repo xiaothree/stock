@@ -17,6 +17,29 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 /**
+ * 记录股票价格
+ * @author latupa
+ *
+ */
+class PriceRecord {
+	double open;
+	double close;
+	int is_holiday;  //是否休市;0为交易日，1为非交易日
+}
+
+/**
+ * 记录除股票权数据
+ * @author latupa
+ *
+ */
+class ExDivide {
+	double give;		//送股
+	double right;		//配股
+	double right_price;	//配股价
+	double bonus;		//分红
+}
+
+/**
  * 处理所有和股票价格相关的工作
  * @author latupa
  * 1.股票价格按照交易市场分表
@@ -45,7 +68,7 @@ public class StockPriceNew {
 	private static final String STOCK_PRICE_TABLE_PRE = "stock_price__";
 	
 	//股票除权后价格表名前缀
-	private static final String STOCK_PRICE_ED_TABLE_PRE = "stock_price_ed__";
+	public final String STOCK_PRICE_ED_TABLE_PRE = "stock_price_ed__";
 	
 	//股票除权表名前缀
 	private static final String STOCK_EXDIVIDE_TABLE_PRE = "stock_exdivide__";
@@ -55,18 +78,6 @@ public class StockPriceNew {
 	
 	//数据库连接
 	public DBInst dbInst;  
-	
-	public class PriceRecord {
-		double open;
-		double close;
-	}
-	
-	public class ExDivide {
-		double give;		//送股
-		double right;		//配股
-		double right_price;	//配股价
-		double bonus;		//分红
-	}
 	
 	public StockPriceNew(DBInst dbInst) {
 		this.dbInst = dbInst;
@@ -175,6 +186,7 @@ public class StockPriceNew {
             PriceRecord pr = new PriceRecord();
             pr.open		= open;
 			pr.close	= close;
+			pr.is_holiday = 0;
 			
 			if (pr.open == 0 || pr.close == 0) {
 				log.warn("skip record, date:" + sdate + ", open:" + pr.open + ", close:" + pr.close);
@@ -202,7 +214,11 @@ public class StockPriceNew {
 		PriceRecord last_pr = null;
 		while (Integer.parseInt(sdate) < Integer.parseInt(sdate_e)) {
 			if (!stock_price.containsKey(sdate) && last_pr != null) {
-				stock_price.put(sdate, last_pr);
+				PriceRecord new_pr = new PriceRecord();
+				new_pr.open = last_pr.open;
+				new_pr.close = last_pr.close;
+				new_pr.is_holiday = 1;
+				stock_price.put(sdate, new_pr);
 			}
 			
 			last_pr	= stock_price.get(sdate);
@@ -349,10 +365,11 @@ public class StockPriceNew {
 						"`day` DATE not null default '0000-00-00', " +
 						"`open` double NOT NULL default '0', " +
 						"`close` double NOT NULL default '0', " +
-						"PRIMARY KEY (`code`, `day`)" +
+						"`is_holiday` int NOT NULL default '0', " +
+						"PRIMARY KEY (`code`, `day`) " +
 						") ENGINE=InnoDB DEFAULT CHARSET=utf8 " +
 						"partition by key(code) " +
-						"partitions 100";	
+						"partitions 200";	
 				log.info("	" + sql);
 				dbInst.updateSQL(sql);
 				stock_price_market_map.put(market, Boolean.TRUE);
@@ -373,16 +390,18 @@ public class StockPriceNew {
 			for (String day : stock_price.keySet().toArray(new String[0])) {
 				PriceRecord pr = stock_price.get(day);
 				sql = "insert into " + table_name + 
-						"(`code`, `name`, `day`, `open`, `close`) values " +
+						"(`code`, `name`, `day`, `open`, `close`, `is_holiday`) values " +
 						"('" + code + "', " + 
 						"'" + name + "', " + 
 						"'" + day + "', " + 
 						pr.open + "," + 
-						pr.close + ") " +
+						pr.close + "," +
+						pr.is_holiday + ") " +
 						"ON DUPLICATE KEY UPDATE " +
 						"`name` = '" + name + "', " + 
 						"`open` = " + pr.open + "," +
-						"`close` = " + pr.close;
+						"`close` = " + pr.close + "," +
+						"`is_holiday` = " + pr.is_holiday;
 				dbInst.updateSQL(sql);
 			}
 		}
@@ -447,9 +466,9 @@ public class StockPriceNew {
 			dbInst.updateSQL(sql);
 			
 			//3. 转为分区表
-//			sql = "alter table " + stock_ed_table + " partition by key(code) partitions 100";
-//			log.info(sql);
-//			dbInst.updateSQL(sql);
+			sql = "alter table " + stock_ed_table + " partition by key(code) partitions 200";
+			log.info(sql);
+			dbInst.updateSQL(sql);
 			
 			//4. 根据除权数据文件，更新股票价格表
 			sql = "select `code` as `code`, `day` as `day`, `give` as `give`, `right` as `right`, `right_price` as `right_price`, `bonus` as `bonus` from " + ex_table + " order by code, day";
@@ -487,6 +506,7 @@ public class StockPriceNew {
 				//log.info(sql);
 				dbInst.updateSQL(sql);
 			}
+			rs.close();
 		}
 	}
 	
@@ -711,7 +731,7 @@ public class StockPriceNew {
 		}
 		
 		//DBInst dbInst	= new DBInst("jdbc:mysql://localhost:3306/stock_new", "latupa", "latupa");
-		DBInst dbInst	= new DBInst("jdbc:mysql://192.168.153.138:3306/stock_new", "latupa", "latupa");
+		DBInst dbInst	= new DBInst("jdbc:mysql://192.168.153.142:3306/stock_new", "latupa", "latupa");
 		
 		StockPriceNew sp = new StockPriceNew(dbInst);
 		
