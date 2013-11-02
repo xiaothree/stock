@@ -1,7 +1,11 @@
 package com.latupa.stock;
 
+import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -47,7 +51,7 @@ public class StockFunc {
 	private static final Log log = LogFactory.getLog(StockPriceNew.class);
 
 	//存储股票的价格数据{day, pr}
-	private TreeMap<String, PriceRecord> stock_price = new TreeMap<String, PriceRecord>();
+	public TreeMap<String, PriceRecord> stock_price = new TreeMap<String, PriceRecord>();
 	
 	//股票代码
 	private String code;
@@ -66,7 +70,7 @@ public class StockFunc {
 	}
 	
 	/**
-	 * 加载股票的所有价格数据（除非交易日的除外）
+	 * 加载股票的所有价格数据（非交易日的除外）
 	 * @param code
 	 * @param market
 	 * @throws SQLException
@@ -156,7 +160,7 @@ public class StockFunc {
 		//先计算该周期的均值
 		ArrayList<Integer> mas = new ArrayList<Integer>();
 		mas.add(new Integer(n));
-		maret_map = ma(p_day, mas);
+		maret_map = ma(p_day, mas, 0);
 		br.mid = maret_map.get(new Integer(n)).doubleValue();
 		if (br.mid == 0) {
 			log.debug("return null for mid is 0");
@@ -171,7 +175,7 @@ public class StockFunc {
 		mas.add(new Integer(6));
 		mas.add(new Integer(12));
 		mas.add(new Integer(24));
-		maret_map = ma(p_day, mas);
+		maret_map = ma(p_day, mas, 0);
 		
 		br.bbi = (maret_map.get(new Integer(3)).doubleValue() +
 				maret_map.get(new Integer(6)).doubleValue() +
@@ -190,13 +194,12 @@ public class StockFunc {
 	 * @return
 	 */
 	private double ema(ArrayList<Double> x, int n, int size) {
-		log.debug("n:" + n + "->" + x.get(n - 1));
+//		log.debug("n:" + n + "->" + x.get(n - 1));
 		if (n == 1) {
 			return x.get(n - 1);
 		}
 		else {
-			double tmp = (2 * x.get(n - 1) + (size - 1) * ema(x, n - 1, size)) / (size + 1);
-			return tmp;
+			return (2 * x.get(n - 1) + (size - 1) * ema(x, n - 1, size)) / (size + 1);
 		}
 	}
 	
@@ -208,6 +211,9 @@ public class StockFunc {
 		//先以时间降序写入到数组中
 		for (String day : stock_price.headMap(p_day, true).descendingKeySet().toArray(new String[0])) {
 			PriceRecord pr = stock_price.get(day);
+			//保留三位小数
+//			BigDecimal bg = new BigDecimal(pr.close);
+//	        pr.close = bg.setScale(4, BigDecimal.ROUND_HALF_UP).doubleValue();
 			close_list.add(count, pr.close);
 			count++;
 			last_close = pr.close;
@@ -231,8 +237,9 @@ public class StockFunc {
 	 * MACD计算公式
 	 * y=ema(x,n), y=[2*x+(n-1)y']/(n+1),其中y'表示上一周期y的值
 	 * @return
+	 * @throws ParseException 
 	 */
-	public MacdRet macd(String p_day) {
+	public MacdRet macd(String p_day) throws ParseException {
 		int p_long = 26;
 		int p_short = 13;
 		int p_m = 9;
@@ -247,6 +254,54 @@ public class StockFunc {
 		
 		mr.diff = a13 - a26;
 		log.debug("macd, diff:" + mr.diff + ", ema13:" + a13 + ", ema26:" + a26);
+		
+		//计算9天的DIFF，为计算DEA准备数据（需要剔除掉非交易日的数据）！！！！
+		ArrayList<Double> diff_list = new ArrayList<Double>();
+		DateFormat format = new SimpleDateFormat("yyyyMMdd");
+		Date date = format.parse(p_day);
+		int count = 0;
+		int i = 0;
+		double last_diff = 0;
+		while (true) {
+			long tm = (date.getTime() / 1000 - i * 24 * 60 * 60) * 1000;
+			Date tmp_date = new Date(tm);
+			String tmp_day = format.format(tmp_date);
+			
+			if (stock_price.containsKey(tmp_day)) {
+				close_list_long = GetPriceArray(tmp_day, p_long);
+				close_list_short = GetPriceArray(tmp_day, p_short);
+				
+				a13 = ema(close_list_short, p_short, p_short);
+				a26 = ema(close_list_long, p_long, p_long);
+				
+				double diff = a13 - a26;
+				log.debug(tmp_day + ":" + diff);
+				//保留三位小数
+//				BigDecimal bg = new BigDecimal(diff);
+//		        diff = bg.setScale(2, BigDecimal.ROUND_DOWN).doubleValue();
+				diff_list.add(diff);
+				last_diff = diff;
+				
+				count++;
+				if (count >= p_m || stock_price.firstKey().equals(tmp_day)) {
+					break;
+				}
+			}
+			i++;
+		}
+		
+		while (count < p_m) {
+			log.debug("add" + last_diff);
+			diff_list.add(last_diff);
+			count++;
+		}
+		
+		Collections.reverse(diff_list);
+		mr.dea = ema(diff_list, p_m, p_m);
+		
+		mr.macd = 2 * (mr.diff - mr.dea);
+		log.debug("macd, diff:" + mr.diff + ", dea:" + mr.dea + ", macd:" + mr.macd);
+		
 		return mr;
 	}
 	
@@ -254,9 +309,10 @@ public class StockFunc {
 	 * 均线
 	 * @param p_day yyyymmdd 指定某天的均线
 	 * @param days 均线周期列表（按照从小到大排序）
+	 * @param pre_days 计算p_day之前几天的数据，如果为0，表示p_day当天
 	 * @return
 	 */
-	public TreeMap<Integer, Double> ma(String p_day, ArrayList<Integer> days) {
+	public TreeMap<Integer, Double> ma(String p_day, ArrayList<Integer> days, int pre_days) {
 		
 		double sum = 0;
 		int count = 0;
@@ -266,6 +322,11 @@ public class StockFunc {
 		
 		
 		for (String day : stock_price.headMap(p_day, true).descendingKeySet().toArray(new String[0])) {
+			
+			if (pre_days > 0) {
+				pre_days--;
+				continue;
+			}
 			
 			PriceRecord pr = stock_price.get(day);
 			sum += pr.close;
@@ -296,12 +357,26 @@ public class StockFunc {
 	}
 	
 	/**
+	 * 
+	 * @param p_day yyyymmdd 指定某天
+	 * @return
+	 */
+	public Boolean IsValid(String p_day) {
+		if (stock_price.containsKey(p_day)) {
+			return true;
+		}
+		else {
+			return false;
+		}
+	}
+	
+	/**
 	 * @param args
 	 */
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 		
-		DBInst dbInst	= new DBInst("jdbc:mysql://192.168.153.145:3306/stock_new", "latupa", "latupa");
+		DBInst dbInst	= new DBInst("jdbc:mysql://192.168.153.148:3306/stock_new", "latupa", "latupa");
 		StockFunc sf = new StockFunc(dbInst);
 		try {
 			sf.InitLoadStock("600000", "sh");
@@ -310,7 +385,7 @@ public class StockFunc {
 			e.printStackTrace();
 		}
 		//sf.ShowLoadedStock();
-		String day = "19991214";
+		String day = "20000110";
 		ArrayList<Integer> mas = new ArrayList<Integer>();
 		mas.add(new Integer(5));
 		mas.add(new Integer(10));
@@ -319,7 +394,7 @@ public class StockFunc {
 		mas.add(new Integer(60));
 		mas.add(new Integer(120));
 		
-		sf.ma(day, mas);
+		sf.ma(day, mas, 0);
 		
 		//long time1 = System.currentTimeMillis();
 		BollRet bollret;
@@ -328,7 +403,12 @@ public class StockFunc {
 		//}
 		//System.out.println("time cose:" + Long.toString(time2 - time1));
 			
-		MacdRet macdret = sf.macd(day);
+		try {
+			MacdRet macdret = sf.macd(day);
+		} catch (ParseException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		
 		sf.ClearLoadedStock();
 	}
