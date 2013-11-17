@@ -37,7 +37,7 @@ public class SelectStock {
 	
 	public SelectStock() {
 		this.dbInst = ConnectDB();
-		this.spn = new StockPriceNew(this.dbInst);
+		this.spn = new StockPriceNew();
 	}
 	
 	/**

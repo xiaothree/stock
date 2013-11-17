@@ -23,7 +23,7 @@ public class DBInst {
 	// connect to MySQL
 	void connSQL() {
 		try { 
-			Class.forName("com.mysql.jdbc.Driver" ); 
+			Class.forName("com.mysql.jdbc.Driver"); 
 			conn = DriverManager.getConnection(url, username, password); 
 		}
 		//捕获加载驱动程序异常

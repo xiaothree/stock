@@ -1,9 +1,11 @@
 package com.latupa.stock;
 
+import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.ParseException;
@@ -76,11 +78,57 @@ public class StockPriceNew {
 	//所有股票市场
 	private static final String STOCK_MARKET_ALL = "all";
 	
+	//数据库配置文件
+	private static final String FLAG_FILE_DIR = "src/main/resources/";
+	private static final String dbconf_file = "db.flag";
+	
+	//记录已成功处理的字节数
+	private int byte_num = 0;
+	
 	//数据库连接
 	public DBInst dbInst;  
 	
-	public StockPriceNew(DBInst dbInst) {
-		this.dbInst = dbInst;
+	public StockPriceNew() {
+		this.dbInst = ConnectDB();
+	}
+	
+	/**
+	 * 获取mysql连接
+	 */
+	public DBInst ConnectDB() {
+		try {
+			FileInputStream fis		= new FileInputStream(FLAG_FILE_DIR + dbconf_file);
+	        InputStreamReader isr	= new InputStreamReader(fis, "utf8");
+	        BufferedReader br		= new BufferedReader(isr);
+	        
+	        String line = br.readLine();
+	        
+	        br.close();
+	        isr.close();
+	        fis.close();
+	        
+	        if (line != null) {
+	        	String arrs[] = line.split(" ");
+	        	
+	        	String host = arrs[0];
+	        	String port = arrs[1];
+	        	String db	= arrs[2];
+	        	String user = arrs[3];
+	        	String passwd = arrs[4];
+	        	
+	        	log.info("read db conf, host:" + host + ", port:" + port + ", db:" + db + ", user:" + user + ", passwd:" + passwd);
+	        	DBInst dbInst = new DBInst("jdbc:mysql://" + host + ":" + port + "/" + db, user, passwd);
+	        	return dbInst;
+	        }
+	        else {
+	        	log.error("read " + FLAG_FILE_DIR + dbconf_file + " is null!");
+	        	return null;
+	        }
+		}
+		catch (Exception e) {
+			log.error("read " + FLAG_FILE_DIR + dbconf_file + " failed!", e);
+			return null;
+		}
 	}
 	
 	public long byte2int(byte[] res) { 
@@ -199,6 +247,8 @@ public class StockPriceNew {
 			
 			stock_price.put(sdate, pr);
 			
+			this.byte_num += 32;
+			
 			//log.info("date:" + sdate + " open:" + open + " close:" + close);
 			
 			//0-3
@@ -208,7 +258,14 @@ public class StockPriceNew {
 		log.info("parse " + count + " records");
 		
 		//补全非交易日的数据（用离非交易日最近的交易日数据补齐）
-		date = sdf.parse(sdate_s);
+		try {
+			date = sdf.parse(sdate_s);
+		}
+		catch (Exception e) {
+			e.printStackTrace();
+			log.info("skip it");
+			return byte4;
+		}
 		
 		sdate = sdf.format(date);
 		PriceRecord last_pr = null;
@@ -253,6 +310,8 @@ public class StockPriceNew {
 		String code;
 		String name;
 		
+		this.byte_num = 0;
+		
 		/**
 		 * |4byte|2byte|6byte|4byte|
 		 *   tag  market code none
@@ -261,6 +320,7 @@ public class StockPriceNew {
 		 */
 		
 		dis.read(byte16);
+		this.byte_num += 16;
 		while (dis.available() > 0) {
 			
 			//0-3
@@ -307,6 +367,8 @@ public class StockPriceNew {
 				
 				//20-31
 				dis.read(byte12);
+				
+				this.byte_num += 32;
 				//name由小于等于12个字节构成，某个byte为0x00标识结束
 				byte_is_zero = false;
 				for (int i = 0; i <= byte12.length - 1; i++) {
@@ -324,6 +386,8 @@ public class StockPriceNew {
 				log.info("market:" + market + " code:" + code + " name:" + name);
 				
 				byte4 = ParseStockDAD(dis, code, market, name);
+				
+				log.info("start postion:" + this.byte_num);
 				
 				//把该股票的数据存入数据库
 				StoreStockPriceToDB(clean);
@@ -387,23 +451,55 @@ public class StockPriceNew {
 			
 			TreeMap<String, PriceRecord> stock_price = new TreeMap<String, PriceRecord>(stock_map.get(key));
 			//key:date, value:PriceRecord
+			log.info("start insert records");
+			int count = 0;
+//			for (String day : stock_price.keySet().toArray(new String[0])) {
+//				PriceRecord pr = stock_price.get(day);
+//				sql = "insert into " + table_name + 
+//						"(`code`, `name`, `day`, `open`, `close`, `is_holiday`) values " +
+//						"('" + code + "', " + 
+//						"'" + name + "', " + 
+//						"'" + day + "', " + 
+//						pr.open + "," + 
+//						pr.close + "," +
+//						pr.is_holiday + ") " +
+//						"ON DUPLICATE KEY UPDATE " +
+//						"`name` = '" + name + "', " + 
+//						"`open` = " + pr.open + "," +
+//						"`close` = " + pr.close + "," +
+//						"`is_holiday` = " + pr.is_holiday;
+//				dbInst.updateSQL(sql);
+//				count++;
+//				if (count % 1000 == 0) {
+//					log.info("insert " + count + " records");
+//				}
+//			}
+			
+			sql = "insert into " + table_name + 
+			"(`code`, `name`, `day`, `open`, `close`, `is_holiday`) values ";
+			
 			for (String day : stock_price.keySet().toArray(new String[0])) {
 				PriceRecord pr = stock_price.get(day);
-				sql = "insert into " + table_name + 
-						"(`code`, `name`, `day`, `open`, `close`, `is_holiday`) values " +
-						"('" + code + "', " + 
+				sql = sql + "('" + code + "', " + 
 						"'" + name + "', " + 
 						"'" + day + "', " + 
 						pr.open + "," + 
 						pr.close + "," +
-						pr.is_holiday + ") " +
-						"ON DUPLICATE KEY UPDATE " +
-						"`name` = '" + name + "', " + 
-						"`open` = " + pr.open + "," +
-						"`close` = " + pr.close + "," +
-						"`is_holiday` = " + pr.is_holiday;
-				dbInst.updateSQL(sql);
+						pr.is_holiday + "), ";
+				count++;
+				if (count % 1000 == 0) {
+					log.info("insert " + count + " records");
+					sql = sql.substring(0, sql.length() - 2) + ";";
+					dbInst.updateSQL(sql);
+					sql = "insert into " + table_name + 
+							"(`code`, `name`, `day`, `open`, `close`, `is_holiday`) values ";
+				}
 			}
+			
+			log.info("insert " + count + " records");
+			sql = sql.substring(0, sql.length() - 2) + ";";
+			dbInst.updateSQL(sql);
+			log.info("insert finish");
 		}
 	}
 	
@@ -557,23 +653,20 @@ public class StockPriceNew {
 			
 			TreeMap<String, ExDivide> ex_divide = new TreeMap<String, ExDivide>(ex_divide_map.get(key));
 			//key:date, value:ExDivide
+			sql = "insert into " + table_name + 
+					"(`code`, `day`, `give`, `right`, `right_price`, `bonus`) values ";
 			for (String day : ex_divide.keySet().toArray(new String[0])) {
 				ExDivide ed = ex_divide.get(day);
-				sql = "insert into " + table_name + 
-						"(`code`, `day`, `give`, `right`, `right_price`, `bonus`) values " +
-						"('" + code + "', " + 
+				sql = sql + "('" + code + "', " + 
 						"'" + day + "', " + 
 						ed.give + "," + 
 						ed.right + "," +
 						ed.right_price + "," +
-						ed.bonus + ") " +
-						"ON DUPLICATE KEY UPDATE " +
-						"`give` = " + ed.give + "," +
-						"`right` = " + ed.right + "," +
-						"`right_price` = " + ed.right_price + "," +
-						"`bonus` = " + ed.bonus;
-				dbInst.updateSQL(sql);
+						ed.bonus + "), ";
 			}
+			
+			sql = sql.substring(0, sql.length() - 2) + ";";
+			dbInst.updateSQL(sql);
 		}
 	}
 	
@@ -730,10 +823,7 @@ public class StockPriceNew {
 			System.exit(0);
 		}
 		
-		//DBInst dbInst	= new DBInst("jdbc:mysql://localhost:3306/stock_new", "latupa", "latupa");
-		DBInst dbInst	= new DBInst("jdbc:mysql://192.168.153.142:3306/stock_new", "latupa", "latupa");
-		
-		StockPriceNew sp = new StockPriceNew(dbInst);
+		StockPriceNew sp = new StockPriceNew();
 		
 		if (args[0].equals("-f")) {
 			String file_name = args[1];
@@ -753,8 +843,6 @@ public class StockPriceNew {
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
-			
-
 		}
 		else if (args[0].equals("-d")) {
 			String file_name = args[1];
@@ -791,12 +879,5 @@ public class StockPriceNew {
 		System.out.println("    -f dzh dad file [-c]");
 		System.out.println("    -d dzh pwr file");
 		System.out.println("    -e update stock price by ex-divide data");
-		System.out.println("    -e ex-divide file. such as sh_000001");
-		System.out.println("		-m market");
-		System.out.println("		-c code");
-		System.out.println("    -t range 0-alltime;1-rt;2-history");
-		System.out.println("    	-m mode	0-all trans stock;1-new trans stock;2-stock");
-		System.out.println("    		none");
-		System.out.println("    		-s stock code");
 	}
 }
