@@ -16,6 +16,10 @@ class StockInfo {
 	String market;
 }
 
+/*
+ * 选股
+ */
+
 public class SelectStock {
 
 	private static final Log log = LogFactory.getLog(StockPrice.class);
@@ -24,7 +28,7 @@ public class SelectStock {
 	private ArrayList<StockInfo> stock_pool = new ArrayList<StockInfo>();
 	
 	//存储选股结果列表
-	private ArrayList<StockInfo> stock_result = new ArrayList<StockInfo>();
+	public ArrayList<StockInfo> stock_result = new ArrayList<StockInfo>();
 	
 	//数据库连接
 	public DBInst dbInst;
@@ -37,7 +41,7 @@ public class SelectStock {
 	
 	public SelectStock() {
 		this.dbInst = ConnectDB();
-		this.spn = new StockPriceNew();
+		this.spn = new StockPriceNew(dbInst);
 	}
 	
 	/**
@@ -131,6 +135,9 @@ public class SelectStock {
 	 * @throws SQLException 
 	 */
 	public void SelectProc(String day) throws SQLException {
+		
+		stock_result.clear();
+		
 		for (StockInfo si : stock_pool) {
 			log.info("start proc " + si.code + ":" + si.market);
 			

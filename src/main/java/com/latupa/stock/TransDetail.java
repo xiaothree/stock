@@ -44,7 +44,7 @@ public class TransDetail {
 	 * @param table_postfix
 	 * @param record_info
 	 */
-	public void RecordParse(String table_postfix, String record_info) {
+	public void RecordParse(String record_info) {
         
 		log.info("start parse " + record_info + " for " + table_name);
 		
@@ -464,7 +464,7 @@ public class TransDetail {
 				
 				System.out.println("table_postfix = " + table_postfix + " record:" + record_info);
 				
-				td.RecordParse(table_postfix, record_info);
+				td.RecordParse(record_info);
 				td.StoreRecordsToDB();
 				td.ScanRecordsToDB();
 			}

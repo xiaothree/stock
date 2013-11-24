@@ -335,7 +335,7 @@ public class StockPrice {
 	 * @return
 	 */
 	public PriceRecord GetStockPriceFromDB(String market, String code, String date) {
-		String table_name = STOCK_PRICE_ED_TABLE_PRE + market + "_" + code;
+		String table_name = STOCK_PRICE_ED_TABLE_PRE + market;
 		
 		PriceRecord pr = null;
 		
@@ -352,7 +352,7 @@ public class StockPrice {
 //				return pr;
 //			}
 //			else {
-				sql	= "select open as open, close as close from " + table_name + " where date = '" + date + "'";
+				sql	= "select open as open, close as close from " + table_name + " where code = '" + code + "' and day = '" + date + "'";
 				
 				rs = dbInst.selectSQL(sql);
 				if (rs.next()) {

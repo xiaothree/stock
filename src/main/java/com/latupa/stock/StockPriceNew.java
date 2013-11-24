@@ -92,6 +92,10 @@ public class StockPriceNew {
 		this.dbInst = ConnectDB();
 	}
 	
+	public StockPriceNew(DBInst dbInst) {
+		this.dbInst = dbInst;
+	}
+	
 	/**
 	 * 获取mysql连接
 	 */

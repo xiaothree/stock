@@ -9,7 +9,6 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.TreeMap;
 
 import org.apache.commons.logging.Log;
@@ -83,7 +82,7 @@ public class StockFunc {
 		
 		String table_name = spn.STOCK_PRICE_ED_TABLE_PRE + this.market;
 		String sql = "select day as day, open as open, close as close from " + table_name + " where code = '" + this.code + "' and is_holiday = 0";
-		log.info(sql);
+		log.debug(sql);
 		ResultSet rs = dbInst.selectSQL(sql);
 		
 		while (rs.next()) {
