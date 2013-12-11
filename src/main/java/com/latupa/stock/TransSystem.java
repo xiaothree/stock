@@ -6,9 +6,7 @@ import java.io.InputStreamReader;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Random;
@@ -24,19 +22,18 @@ import org.apache.commons.logging.LogFactory;
 class StockDetail {
 	
 	//股票状态
-	private final int STOCK_STATUS_READY	= 1;	//准备
-	private final int STOCK_STATUS_BUY		= 2;	//入场
-	private final int STOCK_STATUS_FREEUP	= 3;	//盘活
-	private final int STOCK_STATUS_BULLS	= 4;	//多头
-	private final int STOCK_STATUS_SELL		= 5;	//出场
+	public static final int STOCK_STATUS_BUY	= 1;	//入场未盘活
+	public static final int STOCK_STATUS_FREEUP	= 2;	//盘活
+	public static final int STOCK_STATUS_SELL	= 3;	//出场
 	
 	String	market;			//股票市场
 	String	code;			//股票代码
 	String	buy_date;		//买入日期
-	int		status;			//股票状态
+	int		status;			//主要股票状态
+	int		sub_status;		//次要状态
 	String	sell_date;		//卖出日期
 	double	price_buy;		//买入价格
-	double	sprice_sell;	//卖出价格
+	double	price_sell;		//卖出价格
 }
 
 /**
@@ -191,13 +188,6 @@ public class TransSystem {
 	}
 	
 	/**
-	 * 准备状态股票的处理函数
-	 */
-	public void StockStatusReadyProc() {
-		System.out.println("ready proc");
-	}
-	
-	/**
 	 * 买入状态股票的处理函数
 	 */
 	public void StockStatusBuyProc() {
@@ -212,17 +202,17 @@ public class TransSystem {
 	}
 	
 	/**
-	 * 多头状态股票的处理函数
-	 */
-	public void StockStatusBullsProc() {
-		System.out.println("bulls proc");
-	}
-	
-	/**
 	 * 卖出状态股票的处理函数
 	 */
 	public void StockStatusSellProc() {
 		System.out.println("sell proc");
+	}
+	
+	/**
+	 * 选股处理
+	 */
+	public void StockChooseProc() {
+		System.out.println("choose proc");
 	}
 	
 	/*
@@ -306,6 +296,25 @@ public class TransSystem {
 			for (StockInfo si : stocks_ready) {
 				
 				log.info("buy stock " + si.code);
+				
+				//获取股票相关信息记录在内存中
+				StockDetail sd	= new StockDetail();
+				sd.buy_date 	= date;
+				sd.code			= si.code;
+				sd.market		= si.market;
+				sd.status		= StockDetail.STOCK_STATUS_BUY;
+				
+				StockPriceNew spn = new StockPriceNew(dbInst);
+		        PriceRecord pr = spn.GetStockPriceFromDB(sd.market, sd.code, sd.buy_date);
+		        if (pr == null) {
+		        	log.error("get stock price failed! code:" + sd.code + " date:" + sd.buy_date);
+		        	System.exit(0);
+		        }
+		        sd.price_buy	= pr.open;
+		        stocks.add(sd);
+				
+		        
+		        //股票交易信息记录到数据库
 				TransDetail td = new TransDetail("test", this.dbInst);
 				String record = date + "," + si.code + "," + "1" + "," + si.market;
 				td.RecordParse(record);
@@ -332,6 +341,15 @@ public class TransSystem {
 			
 			//首先买入READY的股票
 			BuyStocks(date);
+			
+			//入场股票处理
+			StockStatusBuyProc();
+			
+			//盘活股票处理
+			StockStatusFreeupProc();
+			
+			//卖出股票处理
+			StockStatusSellProc();
 			
 			//执行选股
 			ChooseStocks(date);

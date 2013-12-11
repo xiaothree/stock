@@ -83,9 +83,9 @@ public class TransDetail {
 	        }
         }
         
-        StockPrice sp = new StockPrice(dbInst);
-        StockPrice.PriceRecord pr = null;
-        pr = sp.GetStockPriceFromDB(record.market, record.code, record.date);
+        StockPriceNew spn = new StockPriceNew(dbInst);
+        PriceRecord pr = null;
+        pr = spn.GetStockPriceFromDB(record.market, record.code, record.date);
         if (pr == null) {
         	log.error("get stock price failed! code:" + record.code + " date:" + record.date);
         	System.exit(0);
@@ -367,7 +367,7 @@ public class TransDetail {
 			
 			int last_in_num = 0;
 			
-			StockPrice sp = new StockPrice(dbInst);
+			StockPriceNew spn = new StockPriceNew(dbInst);
 			
 			for (TransDetailRecord record : trans_map.get(keyword)) {
 				System.out.println("check -> before " + record.toString());
@@ -375,7 +375,7 @@ public class TransDetail {
 				int opt = record.opt;
 				String sdate = record.date;
 				
-				StockPrice.PriceRecord pr = sp.GetStockPriceFromDB(market, code, sdate);
+				PriceRecord pr = spn.GetStockPriceFromDB(market, code, sdate);
 				
 				if (opt == TransDetailRecord.OPT_IN) {
 					record.deal_price = pr.open;

@@ -2,6 +2,19 @@ package com.latupa.stock;
 
 import java.text.ParseException;
 
+
+/**
+ * 股票信息
+ * @author latupa
+ *
+ */
+class StockDetailMa60 extends StockDetail {
+	
+	//股票次要状态
+	public static final int STOCK_SUB_STATUS_BULLS	= 1;	//盘活后多头
+	
+}
+
 public class TransSystemMa60 extends TransSystem {
 
 	public TransSystemMa60(String market, String date_s, String date_e) {

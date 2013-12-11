@@ -29,7 +29,7 @@ public class CalcInfo {
 	
 	private static final Log log = LogFactory.getLog(StockPrice.class);
 	
-	private StockPrice sp;
+	private StockPriceNew spn;
 	
 	private TransDetail td;
 	
@@ -102,7 +102,7 @@ public class CalcInfo {
 		
 		dbInst.updateSQL(sql);
 		
-		sp = new StockPrice(dbInst);
+		spn = new StockPriceNew(dbInst);
 		//sp.LoadStockPrice(StockPrice.UPDATE_STOCK_TRANSED_CODE, "", "");
 		
 		td = new TransDetail(table_postfix, dbInst);
@@ -266,9 +266,9 @@ public class CalcInfo {
 					 */
 					//如果为入场当天，则根据当天收盘市值-入场价格（含税）
 					if (record.opt == TransDetailRecord.OPT_IN) {
-						StockPrice.PriceRecord pr;
+						PriceRecord pr;
 						try {
-							pr = sp.GetStockPriceFromDB(market, code, date);
+							pr = spn.GetStockPriceFromDB(market, code, date);
 							
 							profit_trans = (pr.close * stock_num) - stock_total;
 							
@@ -351,9 +351,9 @@ public class CalcInfo {
 					 */
 					//如果是在历史交易端的中间，则根据历史收盘市值-入场价格（含税）
 					else if (record.opt == TransDetailRecord.OPT_OUT) {
-						StockPrice.PriceRecord pr;
+						PriceRecord pr;
 						try {
-							pr = sp.GetStockPriceFromDB(market, code, date);
+							pr = spn.GetStockPriceFromDB(market, code, date);
 							/**
 							 * 		,end]
 							 *     ^
@@ -391,9 +391,9 @@ public class CalcInfo {
 				 */
 				//则根据当天收盘市值-入场价格（含税）
 				if (record_pre.opt == TransDetailRecord.OPT_IN) { 
-					StockPrice.PriceRecord pr;
+					PriceRecord pr;
 					try {
-						pr = sp.GetStockPriceFromDB(market, code, date);
+						pr = spn.GetStockPriceFromDB(market, code, date);
 						double stock_num_pre	= record_pre.num;
 						double stock_total_pre	= record_pre.deal_total;
 						
@@ -460,11 +460,11 @@ public class CalcInfo {
 				
 				//获取上证大盘的指数
 				//StockPrice.PriceRecord sh_pr = sp.GetStockPrice(StockPrice.CODE_SZZS, TransDetailRecord.MARKET_SH, date_str);
-				StockPrice.PriceRecord sh_pr = sp.GetStockPriceFromDB(TransDetailRecord.MARKET_SH, StockPrice.CODE_SZZS, date_str);
+				PriceRecord sh_pr = spn.GetStockPriceFromDB(TransDetailRecord.MARKET_SH, StockPrice.CODE_SZZS, date_str);
 				
 				//获取深证大盘的指数
 				//StockPrice.PriceRecord sz_pr = sp.GetStockPrice(StockPrice.CODE_SZCZ, TransDetailRecord.MARKET_SZ, date_str);
-				StockPrice.PriceRecord sz_pr = sp.GetStockPriceFromDB(TransDetailRecord.MARKET_SZ, StockPrice.CODE_SZCZ, date_str);
+				PriceRecord sz_pr = spn.GetStockPriceFromDB(TransDetailRecord.MARKET_SZ, StockPrice.CODE_SZCZ, date_str);
 				
 				record.date = date_str;
 				record.sh_price	= sh_pr.close;

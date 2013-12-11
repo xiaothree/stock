@@ -160,6 +160,53 @@ public class StockPriceNew {
 	}	
 	
 	/**
+	 * 直接从DB获取
+	 * @param code
+	 * @param date
+	 * @return
+	 */
+	public PriceRecord GetStockPriceFromDB(String market, String code, String date) {
+		
+		String table_name = STOCK_PRICE_ED_TABLE_PRE + market;
+		
+		PriceRecord pr = null;
+		
+		String sql = null;
+		ResultSet rs = null;
+		
+//		//先查询对应的表是否存在
+//		String sql 	= "show tables like '" + table_name + "'";
+//		ResultSet rs = dbInst.selectSQL(sql);
+//				
+		try {
+//			//如果不存在，则立即返回
+//			if (!rs.next()) {
+//				return pr;
+//			}
+//			else {
+				sql	= "select open as open, close as close, is_holiday as is_holiday from " + table_name + " where code = '" + code + "' and day = '" + date + "'";
+				
+				rs = dbInst.selectSQL(sql);
+				if (rs.next()) {
+
+					pr = new PriceRecord();
+					pr.open 	= rs.getDouble("open");
+					pr.close 	= rs.getDouble("close");
+					pr.is_holiday	= rs.getInt("is_holiday");
+				}
+				
+				rs.close();
+			//}
+		} 
+		catch (Exception e) {
+			log.error("sql excute failed! sql:" + sql, e);
+			System.exit(0);
+		}
+		
+		return pr;
+	}
+	
+	/**
 	 * 解析大智慧DAD文件中的一个股票的所有天的数据
 	 * @param dis
 	 * @param code
