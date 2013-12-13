@@ -2,7 +2,9 @@ package com.latupa.stock;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.TreeMap;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -19,6 +21,9 @@ public class BTCTransSystem {
 	
 	//BTC数据
 	public BTCData btc_data = new BTCData();
+	
+	//BTC计算公式
+	public BTCFunc btc_func = new BTCFunc();
 	
 	public BTCTransSystem(int data_cycle, int fetch_cycle) {
 		this.data_cycle		= data_cycle;
@@ -38,7 +43,7 @@ public class BTCTransSystem {
 			stamp_sec = stamp_millis / 1000;
 		}
 		
-		DateFormat df	= new SimpleDateFormat("ddHHmmss");  
+		DateFormat df	= new SimpleDateFormat("yyyyMMddHHmmss");  
 		long last_stamp_sec = 0;
 		
 		log.info("start process");
@@ -62,8 +67,21 @@ public class BTCTransSystem {
 					Date cur_date = new Date(stamp_millis);
 					String sDateTime = df.format(cur_date); 
 					btc_data.BTCRecordMemInsert(sDateTime);
+					btc_data.BTCRecordDBInsert(sDateTime);
 					btc_data.BTCSliceRecordInit();
 					btc_data.BTCRecordMemShow();
+					
+					
+					//计算5、10周期均线
+					ArrayList<Integer> mas = new ArrayList<Integer>();
+					mas.add(new Integer(5));
+					mas.add(new Integer(10));
+					
+					TreeMap<Integer, Double> ret = btc_func.ma(btc_data.b_record_map, sDateTime, mas, 0);
+					
+					//计算布林线
+					BollRet bollret;
+					bollret = btc_func.boll(btc_data.b_record_map, sDateTime);
 				}
 				
 				last_stamp_sec = stamp_sec; 

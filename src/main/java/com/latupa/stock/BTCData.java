@@ -70,9 +70,11 @@ public class BTCData {
 	public static final String FLAG_FILE_DIR = "src/main/resources/";
 	public static final String dbconf_file = "db.flag";
 	
+	public static final String BTC_PRICE_TABLE = "btc_price";
+	
 	public BTCData() {
-		//this.dbInst 		= ConnectDB();
-
+		this.dbInst	= ConnectDB();
+		DBInit();
 		BTCSliceRecordInit();
 	}
 	
@@ -83,6 +85,32 @@ public class BTCData {
 		this.btc_s_record.close	= 0;
 		this.btc_s_record.init_flag	= true;
 	}
+	
+	public void DBInit() {
+		String sql = "create table if not exists " + BTC_PRICE_TABLE + 
+				"(`time` DATETIME not null default '0000-00-00 00:00:00', " +
+				"`open` double NOT NULL default '0', " +
+				"`close` double NOT NULL default '0', " +
+				"`high` double NOT NULL default '0', " +
+				"`low` double NOT NULL default '0', " +
+				"PRIMARY KEY (`time`)" +
+				") ENGINE=InnoDB DEFAULT CHARSET=utf8";	
+		
+		dbInst.updateSQL(sql);
+	}
+	
+	public void BTCRecordDBInsert(String time) {
+		String sql = "insert into " + BTC_PRICE_TABLE + 
+				"(`time`, `open`, `close`, `high`, `low`) values ('" +
+				time + "', " +
+				this.btc_s_record.open + ", " +
+				this.btc_s_record.close + ", " +
+				this.btc_s_record.high + ", " +
+				this.btc_s_record.low + ")";
+		
+		dbInst.updateSQL(sql);
+	}
+	
 	
 	/**
 	 * 
