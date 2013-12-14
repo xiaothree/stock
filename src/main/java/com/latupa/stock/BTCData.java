@@ -78,7 +78,7 @@ public class BTCData {
 		BTCSliceRecordInit();
 	}
 	
-	public void BTCSliceRecordInit() {
+	public synchronized void BTCSliceRecordInit() {
 		this.btc_s_record.high	= 0;
 		this.btc_s_record.low	= 0;
 		this.btc_s_record.open	= 0;
@@ -136,7 +136,7 @@ public class BTCData {
 	 * 更新BTCSliceRecord的值
 	 * @throws IOException 
 	 */
-	public boolean BTCSliceRecordUpdate() {
+	public synchronized boolean BTCSliceRecordUpdate() {
 		
 		double last = FetchRT();
 //		double last = FetchRTWeb();
