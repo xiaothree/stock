@@ -1,5 +1,8 @@
 package com.latupa.stock;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 /**
  * 交易策略
       买入：
@@ -11,6 +14,8 @@ package com.latupa.stock;
  * @author latupa
  */
 public class BTCTransStrategy1 implements BTCTransStrategy {
+	
+	public static final Log log = LogFactory.getLog(BTCTransStrategy1.class);
 	
 	public enum STATUS {
 		READY,	//待买，即空仓
@@ -31,6 +36,7 @@ public class BTCTransStrategy1 implements BTCTransStrategy {
 		//MACD金叉
 		if ((record.macd_record.diff > record.macd_record.dea) &&
 				(record_1cycle_before.macd_record.diff < record_1cycle_before.macd_record.dea)) {
+			log.info("buy1, " + "price:" + record.close);
 			return true;
 		}
 		
@@ -42,6 +48,7 @@ public class BTCTransStrategy1 implements BTCTransStrategy {
 				(record.macd_record.macd > 0 &&
 						record_2cycle_before.macd_record.macd > record_1cycle_before.macd_record.macd &&
 						record.macd_record.macd > record_1cycle_before.macd_record.macd)) {
+			log.info("buy2, " + "price:" + record.close);
 			return true;
 		}
 		

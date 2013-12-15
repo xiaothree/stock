@@ -41,6 +41,9 @@ public class BTCProcThread extends Thread {
 				if ((stamp_sec % this.btc_trans_sys.cycle_data) == 0 && 
 						(this.btc_trans_sys.btc_data.btc_s_record.init_flag == false)) {
 					log.info("start update to system");
+					
+					
+					
 					Date cur_date = new Date(stamp_millis);
 					String sDateTime = df.format(cur_date); 
 					this.btc_trans_sys.btc_data.BTCRecordMemInsert(sDateTime);
@@ -66,6 +69,11 @@ public class BTCProcThread extends Thread {
 					} catch (ParseException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
+					}
+					
+					this.btc_trans_sys.btc_k_cycles++;
+					if (this.btc_trans_sys.btc_k_cycles >= 30) {
+						this.btc_trans_sys.btc_trans_stra.IsBuy(this.btc_trans_sys.btc_data);
 					}
 				}
 				else {

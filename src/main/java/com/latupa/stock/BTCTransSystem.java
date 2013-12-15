@@ -27,11 +27,17 @@ public class BTCTransSystem {
 	//初始资金
 	public final double BTC_INIT_AMOUNT = 10000;
 	
+	//K线数
+	public int btc_k_cycles = 0;
+	
 	//BTC数据
 	public BTCData btc_data = new BTCData();
 	
 	//BTC计算公式
 	public BTCFunc btc_func = new BTCFunc();
+	
+	//交易策略
+	public BTCTransStrategy1 btc_trans_stra = new BTCTransStrategy1();
 	
 	public BTCTransSystem(int cycle_data, int cycle_fetch) {
 		this.cycle_data		= cycle_data;
