@@ -8,6 +8,9 @@ import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.DecimalFormat;
+import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.TreeMap;
 
 import net.sf.json.JSONObject;
@@ -49,6 +52,24 @@ class BTCDSliceRecord extends BTCBasicRecord {
 }
 
 
+class BTCTotalRecord extends BTCBasicRecord {
+	MaRet ma_record;
+	BollRet boll_record;
+	MacdRet macd_record;
+	
+	public BTCTotalRecord(BTCBasicRecord record) {
+		this.high	= record.high;
+		this.low	= record.low;
+		this.open	= record.open;
+		this.close	= record.close;
+	}
+}
+	
+/**
+ * 所有交易数据相关操作
+ * @author latupa
+ *
+ */
 public class BTCData {
 	
 	public static final Log log = LogFactory.getLog(BTCData.class);
@@ -57,7 +78,7 @@ public class BTCData {
 	public BTCDSliceRecord btc_s_record = new BTCDSliceRecord();
 	
 	//记录运行时间内的所有K线周期数据
-	public TreeMap<String, BTCBasicRecord> b_record_map = new TreeMap<String, BTCBasicRecord>();
+	public TreeMap<String, BTCTotalRecord> b_record_map = new TreeMap<String, BTCTotalRecord>();
 	
 	//BTC行情接口
 //	public static final String URL_PRICE = "https://www.okcoin.com/api/ticker.do?symbol=ltc_cny";
@@ -93,12 +114,59 @@ public class BTCData {
 				"`close` double NOT NULL default '0', " +
 				"`high` double NOT NULL default '0', " +
 				"`low` double NOT NULL default '0', " +
+				"`ma5` double NOT NULL default '0', " +
+				"`ma10` double NOT NULL default '0', " +
+				"`ma20` double NOT NULL default '0', " +
+				"`ma30` double NOT NULL default '0', " +
+				"`ma60` double NOT NULL default '0', " +
+				"`ma120` double NOT NULL default '0', " +
+				"`upper` double NOT NULL default '0', " +
+				"`mid` double NOT NULL default '0', " +
+				"`lower` double NOT NULL default '0', " +
+				"`bbi` double NOT NULL default '0', " +
+				"`diff` double NOT NULL default '0', " +
+				"`dea` double NOT NULL default '0', " +
+				"`macd` double NOT NULL default '0', " +
 				"PRIMARY KEY (`time`)" +
 				") ENGINE=InnoDB DEFAULT CHARSET=utf8";	
 		
 		dbInst.updateSQL(sql);
 	}
 	
+	/**
+	 * 对BTCTotalRecord映射表的操作：获取指定时间的record
+	 * @param time
+	 * @return
+	 */
+	public BTCTotalRecord BTCRecordOptGetByTime(String time) {
+		if (this.b_record_map.containsKey(time)) {
+			return this.b_record_map.get(time);
+		}
+		else {
+			return null;
+		}
+	}
+	
+	/**
+	 * 对BTCTotalRecord映射表的操作：获取指定周期的record
+	 * @param cycle 1表示1个周期前record，以此类推，0表示当前最新周期record
+	 * @return
+	 */
+	public BTCTotalRecord BTCRecordOptGetByCycle(int cycle) {
+		for (String time : this.b_record_map.descendingKeySet().toArray(new String[0])) {
+			if (cycle == 0) {
+				return this.b_record_map.get(time);
+			}
+			cycle--;
+		}
+		
+		return null;
+	}
+	
+	/**
+	 * 更新基础价格信息到DB
+	 * @param time
+	 */
 	public void BTCRecordDBInsert(String time) {
 		String sql = "insert into " + BTC_PRICE_TABLE + 
 				"(`time`, `open`, `close`, `high`, `low`) values ('" +
@@ -113,13 +181,183 @@ public class BTCData {
 	
 	
 	/**
-	 * 
+	 * 更新Ma数据到DB
+	 * @param time
+	 */
+	public void BTCMaRetDBUpdate(String time) {
+		if (this.b_record_map.containsKey(time)) {
+			BTCTotalRecord record = this.b_record_map.get(time);
+			String sql = "update " + BTC_PRICE_TABLE + " set " +
+					"ma5=" + record.ma_record.ma5 + ", " +
+					"ma10=" + record.ma_record.ma10 + ", " +
+					"ma20=" + record.ma_record.ma20 + ", " +
+					"ma30=" + record.ma_record.ma30 + ", " +
+					"ma60=" + record.ma_record.ma60 + ", " +
+					"ma120=" + record.ma_record.ma120 + 
+					" where time = '" + time + "'";
+			
+			dbInst.updateSQL(sql);
+		}
+		else {
+			log.error("time " + time + "is not in db");
+			System.exit(1);
+		}
+	}
+	
+	/**
+	 * 更新Boll数据到DB
+	 * @param time
+	 */
+	public void BTCBollRetDBUpdate(String time) {
+		if (this.b_record_map.containsKey(time)) {
+			BTCTotalRecord record = this.b_record_map.get(time);
+			String sql = "update " + BTC_PRICE_TABLE + " set " +
+					"upper=" + record.boll_record.upper + ", " +
+					"mid=" + record.boll_record.mid + ", " +
+					"lower=" + record.boll_record.lower + ", " +
+					"bbi=" + record.boll_record.bbi + 
+					" where time = '" + time + "'";
+			
+			dbInst.updateSQL(sql);
+		}
+		else {
+			log.error("time " + time + "is not in db");
+			System.exit(1);
+		}
+	}
+	
+	/**
+	 * 更新Macd数据到DB
+	 * @param time
+	 */
+	public void BTCMacdRetDBUpdate(String time) {
+		if (this.b_record_map.containsKey(time)) {
+			BTCTotalRecord record = this.b_record_map.get(time);
+			String sql = "update " + BTC_PRICE_TABLE + " set " +
+					"diff=" + record.macd_record.diff + ", " +
+					"dea=" + record.macd_record.dea + ", " +
+					"macd=" + record.macd_record.macd + 
+					" where time = '" + time + "'";
+			
+			dbInst.updateSQL(sql);
+		}
+		else {
+			log.error("time " + time + "is not in db");
+			System.exit(1);
+		}
+	}
+	
+	
+	/**
+	 * 计算Macd
+	 * @param btc_func
+	 * @param time
+	 * @param cycle_data
+	 * @return
+	 * @throws ParseException 
+	 */
+	public MacdRet BTCCalcMacd(BTCFunc btc_func, String time, int cycle_data) throws ParseException {
+		return btc_func.macd(this.b_record_map, time, cycle_data);
+	}
+	
+	/**
+	 * 计算Boll
+	 * @param btc_func
+	 * @param time
+	 * @return
+	 */
+	public BollRet BTCCalcBoll(BTCFunc btc_func, String time) {
+		return btc_func.boll(this.b_record_map, time);
+	}
+	
+	/**
+	 * 计算均线
+	 * @param btc_func
+	 * @param time
+	 * @return
+	 */
+	public MaRet BTCCalcMa(BTCFunc btc_func, String time) {
+		ArrayList<Integer> mas = new ArrayList<Integer>();
+		mas.add(new Integer(5));
+		mas.add(new Integer(10));
+		mas.add(new Integer(20));
+		mas.add(new Integer(30));
+		mas.add(new Integer(60));
+		mas.add(new Integer(120));
+		
+		TreeMap<Integer, Double> ret = btc_func.ma(this.b_record_map, time, mas, 0);
+		
+		MaRet maret = new MaRet();
+		maret.ma5	= ret.get(5);
+		maret.ma10	= ret.get(10);
+		maret.ma20	= ret.get(20);
+		maret.ma30	= ret.get(30);
+		maret.ma60	= ret.get(60);
+		maret.ma120	= ret.get(120);
+		
+		return maret;
+	}
+	
+	
+	/**
+	 * 更新基础价格信息到内存映射表中
 	 * @param time
 	 */
 	public void BTCRecordMemInsert(String time) {
 		if (this.btc_s_record.init_flag == false) {
-			BTCBasicRecord record = new BTCBasicRecord(this.btc_s_record);
+			BTCTotalRecord record = new BTCTotalRecord(this.btc_s_record);
 			this.b_record_map.put(time, record);
+		}
+	}
+	
+	/**
+	 * 把均线值更新到内存中
+	 * @param time
+	 * @param ma_ret
+	 */
+	public void BTCMaRetMemUpdate(String time, MaRet ma_ret) {
+		if (this.b_record_map.containsKey(time)) {
+			BTCTotalRecord record = this.b_record_map.get(time);
+			record.ma_record = new MaRet(ma_ret);
+			this.b_record_map.put(time, record);
+		}
+		else {
+			log.error("time " + time + "is not in mem");
+			System.exit(1);
+		}
+	}
+	
+	/**
+	 * 把Boll线值更新到内存中
+	 * @param time
+	 * @param boll_ret
+	 */
+	public void BTCBollRetMemUpdate(String time, BollRet boll_ret) {
+		if (this.b_record_map.containsKey(time)) {
+			BTCTotalRecord record = this.b_record_map.get(time);
+			record.boll_record = new BollRet(boll_ret);
+			this.b_record_map.put(time, record);
+		}
+		else {
+			log.error("time " + time + "is not in mem");
+			System.exit(1);
+		}
+	}
+	
+	/**
+	 * 把Macd值更新到内存中
+	 * @param time
+	 * @param boll_ret
+	 */
+	public void BTCMacdRetMemUpdate(String time, MacdRet macd_ret) {
+		if (this.b_record_map.containsKey(time)) {
+			BTCTotalRecord record = this.b_record_map.get(time);
+			record.macd_record = new MacdRet(macd_ret);
+			this.b_record_map.put(time, record);
+		}
+		else {
+			log.error("time " + time + "is not in mem");
+			System.exit(1);
 		}
 	}
 	

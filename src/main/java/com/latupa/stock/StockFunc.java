@@ -25,6 +25,18 @@ class BollRet {
 	double mid;
 	double lower;
 	double bbi;
+	
+	public BollRet() {
+	}
+	
+	public BollRet(BollRet bollret) {
+		if (bollret != null) {
+			this.upper	= bollret.upper;
+			this.mid	= bollret.mid;
+			this.lower	= bollret.lower;
+			this.bbi	= bollret.bbi;
+		}
+	}
 }
 
 /**
@@ -36,6 +48,46 @@ class MacdRet {
 	double diff;
 	double dea;
 	double macd;
+	
+	public MacdRet() {
+	}
+	
+	public MacdRet(MacdRet macdret) {
+		if (macdret != null) {
+			this.diff	= macdret.diff;
+			this.dea	= macdret.dea;
+			this.macd	= macdret.macd;
+		}
+	}
+}
+
+/**
+ * 均线的通用存储结构
+ * @author latupa
+ *
+ */
+class MaRet {
+	double ma5;
+	double ma10;
+	double ma20;
+	double ma30;
+	double ma60;
+	double ma120;
+	
+	public MaRet() {
+		
+	}
+	
+	public MaRet(MaRet maret) {
+		if (maret != null) {
+			this.ma5 = maret.ma5;
+			this.ma10 = maret.ma10;
+			this.ma20 = maret.ma20;
+			this.ma30 = maret.ma30;
+			this.ma60 = maret.ma60;
+			this.ma120 = maret.ma120;
+		}
+	}
 }
 
 /**

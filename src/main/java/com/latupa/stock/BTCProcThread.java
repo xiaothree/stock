@@ -11,7 +11,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 /**
- * 处理周期K线，以及所有和判断、买卖操作相关的工作
+ * 处理周期K线更新，以及触发所有和判断、买卖操作相关的工作
  * @author latupa
  *
  */
@@ -48,21 +48,21 @@ public class BTCProcThread extends Thread {
 					this.btc_trans_sys.btc_data.BTCSliceRecordInit();
 					this.btc_trans_sys.btc_data.BTCRecordMemShow();
 					
-					
-					//计算5、10周期均线
-					ArrayList<Integer> mas = new ArrayList<Integer>();
-					mas.add(new Integer(5));
-					mas.add(new Integer(10));
-					
-					TreeMap<Integer, Double> ret = this.btc_trans_sys.btc_func.ma(this.btc_trans_sys.btc_data.b_record_map, sDateTime, mas, 0);
+					//计算均线
+					MaRet ma_ret = this.btc_trans_sys.btc_data.BTCCalcMa(this.btc_trans_sys.btc_func, sDateTime);
+					this.btc_trans_sys.btc_data.BTCMaRetMemUpdate(sDateTime, ma_ret);
+					this.btc_trans_sys.btc_data.BTCMaRetDBUpdate(sDateTime);
 					
 					//计算布林线
-					BollRet bollret;
-					bollret = this.btc_trans_sys.btc_func.boll(this.btc_trans_sys.btc_data.b_record_map, sDateTime);
+					BollRet boll_ret = this.btc_trans_sys.btc_data.BTCCalcBoll(this.btc_trans_sys.btc_func, sDateTime);
+					this.btc_trans_sys.btc_data.BTCBollRetMemUpdate(sDateTime, boll_ret);
+					this.btc_trans_sys.btc_data.BTCBollRetDBUpdate(sDateTime);
 					
-					//计算macd值
+					//计算Macd值
 					try {
-						MacdRet macdret = this.btc_trans_sys.btc_func.macd(this.btc_trans_sys.btc_data.b_record_map, sDateTime, this.btc_trans_sys.cycle_data);
+						MacdRet macd_ret = this.btc_trans_sys.btc_data.BTCCalcMacd(this.btc_trans_sys.btc_func, sDateTime, this.btc_trans_sys.cycle_data);
+						this.btc_trans_sys.btc_data.BTCMacdRetMemUpdate(sDateTime, macd_ret);
+						this.btc_trans_sys.btc_data.BTCMacdRetDBUpdate(sDateTime);
 					} catch (ParseException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();

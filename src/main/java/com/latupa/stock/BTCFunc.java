@@ -25,7 +25,7 @@ public class BTCFunc {
 	 * @param p_time 指定某个时间的标准差
 	 * @return
 	 */
-	public double std(TreeMap<String, BTCBasicRecord> record_map, String p_time, int count, double average) {
+	public double std(TreeMap<String, BTCTotalRecord> record_map, String p_time, int count, double average) {
 		
 		double sum = 0;
 		int i = 0;
@@ -48,7 +48,7 @@ public class BTCFunc {
 	 * @param p_time 指定某个时间的布林线
 	 * @return
 	 */
-	public BollRet boll(TreeMap<String, BTCBasicRecord> record_map, String p_time) {
+	public BollRet boll(TreeMap<String, BTCTotalRecord> record_map, String p_time) {
 		final int n = 26;
 		final int p = 2;
 		
@@ -108,14 +108,14 @@ public class BTCFunc {
 	 * @param pre_cycles 获取pre_cycles的数据
 	 * @return
 	 */
-	private ArrayList<Double> GetPriceArray(TreeMap<String, BTCBasicRecord> record_map, String p_time, int pre_cycles) {
+	private ArrayList<Double> GetPriceArray(TreeMap<String, BTCTotalRecord> record_map, String p_time, int pre_cycles) {
 		ArrayList<Double> close_list = new ArrayList<Double>();
 		 
 		double last_close = 0.0;
 		int count = 0;
 		//先以时间降序写入到数组中
 		for (String time : record_map.headMap(p_time, true).descendingKeySet().toArray(new String[0])) {
-			BTCBasicRecord record = record_map.get(time);
+			BTCTotalRecord record = record_map.get(time);
 			//保留三位小数
 //			BigDecimal bg = new BigDecimal(pr.close);
 //	        pr.close = bg.setScale(4, BigDecimal.ROUND_HALF_UP).doubleValue();
@@ -138,16 +138,16 @@ public class BTCFunc {
 		return close_list;
 	}
 	
-
 	/**
 	 * MACD计算公式
 	 * y=ema(x,n), y=[2*x+(n-1)y']/(n+1),其中y'表示上一周期y的值
 	 * @param record_map 数据映射
 	 * @param p_time 指定某个时间的布林线
+	 * @param cycle_data K线周期长度
 	 * @return
 	 * @throws ParseException
 	 */
-	public MacdRet macd(TreeMap<String, BTCBasicRecord> record_map, String p_time, int cycle_data) throws ParseException {
+	public MacdRet macd(TreeMap<String, BTCTotalRecord> record_map, String p_time, int cycle_data) throws ParseException {
 		int p_long = 26;
 		int p_short = 13;
 		int p_m = 9;
@@ -222,14 +222,13 @@ public class BTCFunc {
 	 * @param pre_cycles 计算pre_cycles之前的数据，如果为0，表示time当时
 	 * @return
 	 */
-	public TreeMap<Integer, Double> ma(TreeMap<String, BTCBasicRecord> record_map, String p_time, ArrayList<Integer> cycles, int pre_cycles) {
+	public TreeMap<Integer, Double> ma(TreeMap<String, BTCTotalRecord> record_map, String p_time, ArrayList<Integer> cycles, int pre_cycles) {
 		
 		double sum = 0;
 		int count = 0;
 		int i = 0;  //处理到的均线坐标
 		
 		TreeMap<Integer, Double> maret_map = new TreeMap<Integer, Double>();
-		
 		
 		for (String time : record_map.headMap(p_time, true).descendingKeySet().toArray(new String[0])) {
 			
@@ -238,7 +237,7 @@ public class BTCFunc {
 				continue;
 			}
 			
-			BTCBasicRecord record = record_map.get(time);
+			BTCTotalRecord record = record_map.get(time);
 			sum += record.close;
 			count++;
 			

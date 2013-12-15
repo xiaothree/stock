@@ -16,7 +16,16 @@ public class BTCTransSystem {
 	public int cycle_data;	
 	
 	//数据采集周期(s)
-	public int cycle_fetch;	
+	public int cycle_fetch;
+	
+	//当前BTC份数
+	public double btc_curt_quantity;
+	
+	//当前仓位(1-10)成
+	public int btc_curt_position;
+	 
+	//初始资金
+	public final double BTC_INIT_AMOUNT = 10000;
 	
 	//BTC数据
 	public BTCData btc_data = new BTCData();
@@ -27,6 +36,8 @@ public class BTCTransSystem {
 	public BTCTransSystem(int cycle_data, int cycle_fetch) {
 		this.cycle_data		= cycle_data;
 		this.cycle_fetch	= cycle_fetch;
+		this.btc_curt_quantity	= 0;
+		this.btc_curt_position	= 0;
 	}
 	
 	public void Route() {
