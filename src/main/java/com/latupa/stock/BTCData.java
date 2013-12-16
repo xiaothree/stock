@@ -10,7 +10,6 @@ import java.net.URL;
 import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.TreeMap;
 
 import net.sf.json.JSONObject;
@@ -92,6 +91,7 @@ public class BTCData {
 	public static final String dbconf_file = "db.flag";
 	
 	public static final String BTC_PRICE_TABLE = "btc_price";
+	public static final String BTC_TRANS_TABLE = "btc_trans";
 	
 	public BTCData() {
 		this.dbInst	= ConnectDB();
@@ -131,6 +131,7 @@ public class BTCData {
 				") ENGINE=InnoDB DEFAULT CHARSET=utf8";	
 		
 		dbInst.updateSQL(sql);
+		
 	}
 	
 	/**

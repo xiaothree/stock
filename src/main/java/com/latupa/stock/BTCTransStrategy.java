@@ -1,7 +1,5 @@
 package com.latupa.stock;
 
-import java.util.TreeMap;
-
 public interface BTCTransStrategy {
 	
 	/**

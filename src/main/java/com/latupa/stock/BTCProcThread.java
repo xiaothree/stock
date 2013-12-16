@@ -3,9 +3,7 @@ package com.latupa.stock;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.TreeMap;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -71,11 +69,22 @@ public class BTCProcThread extends Thread {
 				
 				this.btc_trans_sys.btc_k_cycles++;
 				if (this.btc_trans_sys.btc_k_cycles >= 30) {
+					
+					BTCTransRecord btc_trans_rec = new BTCTransRecord(this.btc_trans_sys.btc_data.dbInst);
+					btc_trans_rec.InitTable();
+					
 					//如果还未入场，则判断是否要入场
 					if (this.btc_trans_sys.btc_trans_stra.curt_status == BTCTransStrategy1.STATUS.READY) {
 						if (this.btc_trans_sys.btc_trans_stra.IsBuy(this.btc_trans_sys.btc_data) == true) {
 							this.btc_trans_sys.btc_trans_stra.curt_status = BTCTransStrategy1.STATUS.BUYIN;
+							
 							this.btc_trans_sys.btc_curt_position = 10;
+							this.btc_trans_sys.btc_curt_quantity = this.btc_trans_sys.BTC_INIT_AMOUNT / this.btc_trans_sys.btc_data.btc_s_record.close;
+							
+							btc_trans_rec.InsertTrans(sDateTime, 
+									BTCTransRecord.OPT.OPT_BUY, 
+									this.btc_trans_sys.btc_curt_quantity, 
+									this.btc_trans_sys.btc_data.btc_s_record.close);
 						}
 					}
 					//如果已入场，则判断是否要出场
@@ -85,10 +94,21 @@ public class BTCProcThread extends Thread {
 						
 						//判断是否要出场
 						int position = this.btc_trans_sys.btc_trans_stra.IsSell(this.btc_trans_sys.btc_data);
-												
-						this.btc_trans_sys.btc_curt_position -= position;
-						if (this.btc_trans_sys.btc_curt_position == 0) {
-							this.btc_trans_sys.btc_trans_stra.Init();
+						
+						//需要出场
+						if (position > 0) {
+							this.btc_trans_sys.btc_curt_position -= position;
+							double sell_quantity = this.btc_trans_sys.btc_curt_quantity * position / 10;
+							this.btc_trans_sys.btc_curt_quantity -= sell_quantity;
+							
+							btc_trans_rec.InsertTrans(sDateTime, 
+									BTCTransRecord.OPT.OPT_SELL, 
+									sell_quantity, 
+									this.btc_trans_sys.btc_data.btc_s_record.close);
+							
+							if (this.btc_trans_sys.btc_curt_position == 0) {
+								this.btc_trans_sys.btc_trans_stra.Init();
+							}
 						}
 					}
 				}
