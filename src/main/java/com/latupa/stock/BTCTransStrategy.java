@@ -19,4 +19,10 @@ public interface BTCTransStrategy {
 	 * @return
 	 */
 	public int IsSell(BTCData btc_data);
+	
+	/**
+	 * 入场后check状态是否变化
+	 * @param btc_data
+	 */
+	public void CheckStatus(BTCData btc_data);
 }

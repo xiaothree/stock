@@ -31,11 +31,13 @@ public class DBInst {
 			 System.err.println(
 			 "装载 JDBC/ODBC 驱动程序失败。" );
 			 cnfex.printStackTrace(); 
+			 System.exit(1);
 		 } 
 		 //捕获连接数据库异常
 		 catch ( SQLException sqlex ) {
 			 System.err.println( "无法连接数据库" );
 			 sqlex.printStackTrace(); 
+			 System.exit(1);
 		 }
 		
 		updateSQL("set names utf8");

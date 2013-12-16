@@ -38,52 +38,68 @@ public class BTCProcThread extends Thread {
 			stamp_millis = System.currentTimeMillis();
 			stamp_sec = stamp_millis / 1000;
 
-				if ((stamp_sec % this.btc_trans_sys.cycle_data) == 0 && 
-						(this.btc_trans_sys.btc_data.btc_s_record.init_flag == false)) {
-					log.info("start update to system");
-					
-					
-					
-					Date cur_date = new Date(stamp_millis);
-					String sDateTime = df.format(cur_date); 
-					this.btc_trans_sys.btc_data.BTCRecordMemInsert(sDateTime);
-					this.btc_trans_sys.btc_data.BTCRecordDBInsert(sDateTime);
-					this.btc_trans_sys.btc_data.BTCSliceRecordInit();
-					this.btc_trans_sys.btc_data.BTCRecordMemShow();
-					
-					//计算均线
-					MaRet ma_ret = this.btc_trans_sys.btc_data.BTCCalcMa(this.btc_trans_sys.btc_func, sDateTime);
-					this.btc_trans_sys.btc_data.BTCMaRetMemUpdate(sDateTime, ma_ret);
-					this.btc_trans_sys.btc_data.BTCMaRetDBUpdate(sDateTime);
-					
-					//计算布林线
-					BollRet boll_ret = this.btc_trans_sys.btc_data.BTCCalcBoll(this.btc_trans_sys.btc_func, sDateTime);
-					this.btc_trans_sys.btc_data.BTCBollRetMemUpdate(sDateTime, boll_ret);
-					this.btc_trans_sys.btc_data.BTCBollRetDBUpdate(sDateTime);
-					
-					//计算Macd值
-					try {
-						MacdRet macd_ret = this.btc_trans_sys.btc_data.BTCCalcMacd(this.btc_trans_sys.btc_func, sDateTime, this.btc_trans_sys.cycle_data);
-						this.btc_trans_sys.btc_data.BTCMacdRetMemUpdate(sDateTime, macd_ret);
-						this.btc_trans_sys.btc_data.BTCMacdRetDBUpdate(sDateTime);
-					} catch (ParseException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
+			if ((stamp_sec % this.btc_trans_sys.cycle_data == 0) && 
+					(this.btc_trans_sys.btc_data.btc_s_record.init_flag == false)) {
+				log.info("start update to system");
+				
+				Date cur_date = new Date(stamp_millis);
+				String sDateTime = df.format(cur_date); 
+				this.btc_trans_sys.btc_data.BTCRecordMemInsert(sDateTime);
+				this.btc_trans_sys.btc_data.BTCRecordDBInsert(sDateTime);
+				this.btc_trans_sys.btc_data.BTCSliceRecordInit();
+				this.btc_trans_sys.btc_data.BTCRecordMemShow();
+				
+				//计算均线
+				MaRet ma_ret = this.btc_trans_sys.btc_data.BTCCalcMa(this.btc_trans_sys.btc_func, sDateTime);
+				this.btc_trans_sys.btc_data.BTCMaRetMemUpdate(sDateTime, ma_ret);
+				this.btc_trans_sys.btc_data.BTCMaRetDBUpdate(sDateTime);
+				
+				//计算布林线
+				BollRet boll_ret = this.btc_trans_sys.btc_data.BTCCalcBoll(this.btc_trans_sys.btc_func, sDateTime);
+				this.btc_trans_sys.btc_data.BTCBollRetMemUpdate(sDateTime, boll_ret);
+				this.btc_trans_sys.btc_data.BTCBollRetDBUpdate(sDateTime);
+				
+				//计算Macd值
+				try {
+					MacdRet macd_ret = this.btc_trans_sys.btc_data.BTCCalcMacd(this.btc_trans_sys.btc_func, sDateTime, this.btc_trans_sys.cycle_data);
+					this.btc_trans_sys.btc_data.BTCMacdRetMemUpdate(sDateTime, macd_ret);
+					this.btc_trans_sys.btc_data.BTCMacdRetDBUpdate(sDateTime);
+				} catch (ParseException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				
+				this.btc_trans_sys.btc_k_cycles++;
+				if (this.btc_trans_sys.btc_k_cycles >= 30) {
+					//如果还未入场，则判断是否要入场
+					if (this.btc_trans_sys.btc_trans_stra.curt_status == BTCTransStrategy1.STATUS.READY) {
+						if (this.btc_trans_sys.btc_trans_stra.IsBuy(this.btc_trans_sys.btc_data) == true) {
+							this.btc_trans_sys.btc_trans_stra.curt_status = BTCTransStrategy1.STATUS.BUYIN;
+							this.btc_trans_sys.btc_curt_position = 10;
+						}
 					}
-					
-					this.btc_trans_sys.btc_k_cycles++;
-					if (this.btc_trans_sys.btc_k_cycles >= 30) {
-						this.btc_trans_sys.btc_trans_stra.IsBuy(this.btc_trans_sys.btc_data);
+					//如果已入场，则判断是否要出场
+					else if (this.btc_trans_sys.btc_trans_stra.curt_status != BTCTransStrategy1.STATUS.READY) {
+						//首先Check状态是否有变化
+						this.btc_trans_sys.btc_trans_stra.CheckStatus(this.btc_trans_sys.btc_data);
+						
+						//判断是否要出场
+						int position = this.btc_trans_sys.btc_trans_stra.IsSell(this.btc_trans_sys.btc_data);
+												
+						this.btc_trans_sys.btc_curt_position -= position;
+						if (this.btc_trans_sys.btc_curt_position == 0) {
+							this.btc_trans_sys.btc_trans_stra.Init();
+						}
 					}
 				}
-				else {
-					try {
-						Thread.sleep(200);
-					} catch (InterruptedException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-				}
+			}
+			
+			try {
+				Thread.sleep(200);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 	}
 }
