@@ -45,7 +45,7 @@ public class BTCTransRecord {
 		String sql = "insert into " + BTC_TRANS_TABLE + 
 				"(`time`, `opt`, `quantity`, `price`, `amount`) values ('" +
 				time + "', " +
-				opt + ", " +
+				opt.ordinal() + ", " +
 				quantity + ", " +
 				price + ", " +
 				(quantity * price) + ")";

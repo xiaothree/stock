@@ -86,10 +86,10 @@ public class DBInst {
 			return true;
 		} catch (SQLException e) {
 			System.out.println("更新数据库时出错：" + sql);
-			//e.printStackTrace();
+			e.printStackTrace();
 		} catch (Exception e) {
 			System.out.println("更新时出错：" + sql);
-			//e.printStackTrace();
+			e.printStackTrace();
 		}
 		return false;
 	}

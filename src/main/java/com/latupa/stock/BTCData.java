@@ -169,6 +169,7 @@ public class BTCData {
 	 * @param time
 	 */
 	public void BTCRecordDBInsert(String time) {
+		
 		String sql = "insert into " + BTC_PRICE_TABLE + 
 				"(`time`, `open`, `close`, `high`, `low`) values ('" +
 				time + "', " +
@@ -176,7 +177,7 @@ public class BTCData {
 				this.btc_s_record.close + ", " +
 				this.btc_s_record.high + ", " +
 				this.btc_s_record.low + ")";
-		
+
 		dbInst.updateSQL(sql);
 	}
 	

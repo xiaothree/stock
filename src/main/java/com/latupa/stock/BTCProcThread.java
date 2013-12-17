@@ -29,12 +29,25 @@ public class BTCProcThread extends Thread {
 		
 		long stamp_millis;
 		long stamp_sec;
-		DateFormat df	= new SimpleDateFormat("yyyyMMddHHmmss");  
+		DateFormat df	= new SimpleDateFormat("yyyyMMddHHmmss"); 
+		
+		long last_stamp_sec = 0;
 		
 		while (true) {
 			
 			stamp_millis = System.currentTimeMillis();
 			stamp_sec = stamp_millis / 1000;
+			
+			//防止同一秒钟内处理多次
+			if (stamp_sec == last_stamp_sec) {
+				try {
+					Thread.sleep(200);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				continue;
+			}
 
 			if ((stamp_sec % this.btc_trans_sys.cycle_data == 0) && 
 					(this.btc_trans_sys.btc_data.btc_s_record.init_flag == false)) {
@@ -79,12 +92,14 @@ public class BTCProcThread extends Thread {
 							this.btc_trans_sys.btc_trans_stra.curt_status = BTCTransStrategy1.STATUS.BUYIN;
 							
 							this.btc_trans_sys.btc_curt_position = 10;
-							this.btc_trans_sys.btc_curt_quantity = this.btc_trans_sys.BTC_INIT_AMOUNT / this.btc_trans_sys.btc_data.btc_s_record.close;
+							
+							BTCTotalRecord record	= this.btc_trans_sys.btc_data.BTCRecordOptGetByCycle(0);
+							this.btc_trans_sys.btc_curt_quantity = this.btc_trans_sys.BTC_INIT_AMOUNT / record.close;
 							
 							btc_trans_rec.InsertTrans(sDateTime, 
 									BTCTransRecord.OPT.OPT_BUY, 
 									this.btc_trans_sys.btc_curt_quantity, 
-									this.btc_trans_sys.btc_data.btc_s_record.close);
+									record.close);
 						}
 					}
 					//如果已入场，则判断是否要出场
@@ -101,10 +116,12 @@ public class BTCProcThread extends Thread {
 							double sell_quantity = this.btc_trans_sys.btc_curt_quantity * position / 10;
 							this.btc_trans_sys.btc_curt_quantity -= sell_quantity;
 							
+							BTCTotalRecord record	= this.btc_trans_sys.btc_data.BTCRecordOptGetByCycle(0);
+							
 							btc_trans_rec.InsertTrans(sDateTime, 
 									BTCTransRecord.OPT.OPT_SELL, 
 									sell_quantity, 
-									this.btc_trans_sys.btc_data.btc_s_record.close);
+									record.close);
 							
 							if (this.btc_trans_sys.btc_curt_position == 0) {
 								this.btc_trans_sys.btc_trans_stra.Init();
@@ -113,6 +130,8 @@ public class BTCProcThread extends Thread {
 					}
 				}
 			}
+			
+			last_stamp_sec = stamp_sec;
 			
 			try {
 				Thread.sleep(200);
