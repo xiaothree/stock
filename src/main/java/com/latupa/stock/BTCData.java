@@ -10,6 +10,7 @@ import java.net.URL;
 import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Random;
 import java.util.TreeMap;
 
 import net.sf.json.JSONObject;
@@ -93,10 +94,14 @@ public class BTCData {
 	public static final String BTC_PRICE_TABLE = "btc_price";
 	public static final String BTC_TRANS_TABLE = "btc_trans";
 	
+	//用于生成伪随机值
+	public double price_mock;
+	
 	public BTCData() {
 		this.dbInst	= ConnectDB();
 		DBInit();
 		BTCSliceRecordInit();
+		this.price_mock = 0;
 	}
 	
 	public synchronized void BTCSliceRecordInit() {
@@ -378,7 +383,8 @@ public class BTCData {
 	 */
 	public synchronized boolean BTCSliceRecordUpdate() {
 		
-		double last = FetchRT();
+		double last = FetchMock();
+//		double last = FetchRT();
 //		double last = FetchRTWeb();
 		
 		//获取失败，则不用更新
@@ -428,6 +434,26 @@ public class BTCData {
 		}
 		
 		return last;
+	}
+	
+	/**
+	 * 随机生成价格值
+	 * @return
+	 */
+	public double FetchMock() {
+		Random random = new Random();
+		boolean is_positive = random.nextBoolean();
+		double wave	= random.nextDouble() * 50;
+		double next_price;
+		if (this.price_mock == 0) {
+			next_price	= is_positive ? 4000 + wave : 4000 - wave;
+		}
+		else {
+			next_price	= is_positive ? this.price_mock + wave : this.price_mock - wave;
+		}
+		
+		this.price_mock	= next_price;
+		return this.price_mock;
 	}
 
 	/**

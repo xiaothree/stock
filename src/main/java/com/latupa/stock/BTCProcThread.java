@@ -112,6 +112,12 @@ public class BTCProcThread extends Thread {
 						
 						//需要出场
 						if (position > 0) {
+							
+							if (position == 5 && 
+									this.btc_trans_sys.btc_trans_stra.curt_status == BTCTransStrategy1.STATUS.BULL) {
+								this.btc_trans_sys.btc_trans_stra.curt_status = BTCTransStrategy1.STATUS.HALF;
+							}
+							
 							this.btc_trans_sys.btc_curt_position -= position;
 							double sell_quantity = this.btc_trans_sys.btc_curt_quantity * position / 10;
 							this.btc_trans_sys.btc_curt_quantity -= sell_quantity;

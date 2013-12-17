@@ -61,7 +61,7 @@ public class BTCTransSystem {
 	 */
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
-		BTCTransSystem btc_ts = new BTCTransSystem(30, 5);
+		BTCTransSystem btc_ts = new BTCTransSystem(5, 1);
 		btc_ts.Route();
 	}
 }

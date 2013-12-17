@@ -115,15 +115,15 @@ public class BTCTransStrategy1 implements BTCTransStrategy {
 			}
 		}
 		else if (this.curt_status == STATUS.BUYIN) {
-			if (this.dead_cross > 0) {
+			if (this.dead_cross == 1) {
 				log.info("sell3 position:" + 10 + ", price:" + record.close);
-				return 5;
+				return 10;
 			}
 		}
 		else if (this.curt_status == STATUS.HALF) {
-			if (this.dead_cross > 0) {
+			if (this.dead_cross == 2) {
 				log.info("sell4 position:" + 5 + ", price:" + record.close);
-				return 10;
+				return 5;
 			}
 		}
 		
