@@ -27,6 +27,10 @@ public class BTCTransSystem {
 	//初始资金
 	public final double BTC_INIT_AMOUNT = 10000;
 	
+	public double btc_buy_price;
+	public double btc_profit;
+	public double btc_accumulate_profit;
+	
 	//K线数
 	public int btc_k_cycles = 0;
 	
@@ -44,6 +48,8 @@ public class BTCTransSystem {
 		this.cycle_fetch	= cycle_fetch;
 		this.btc_curt_quantity	= 0;
 		this.btc_curt_position	= 0;
+		this.btc_profit			= 0;
+		this.btc_accumulate_profit	= 0;
 	}
 	
 	public void Route() {

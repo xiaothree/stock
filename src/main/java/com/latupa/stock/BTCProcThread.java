@@ -86,15 +86,22 @@ public class BTCProcThread extends Thread {
 					BTCTransRecord btc_trans_rec = new BTCTransRecord(this.btc_trans_sys.btc_data.dbInst);
 					btc_trans_rec.InitTable();
 					
+					this.btc_trans_sys.btc_trans_stra.InitPoint();
+					this.btc_trans_sys.btc_trans_stra.CheckPoint(this.btc_trans_sys.btc_data);
+					
+					BTCTotalRecord record	= this.btc_trans_sys.btc_data.BTCRecordOptGetByCycle(0);
+					
 					//如果还未入场，则判断是否要入场
 					if (this.btc_trans_sys.btc_trans_stra.curt_status == BTCTransStrategy1.STATUS.READY) {
-						if (this.btc_trans_sys.btc_trans_stra.IsBuy(this.btc_trans_sys.btc_data) == true) {
+						
+						if (this.btc_trans_sys.btc_trans_stra.IsBuy() == true) {
+							
 							this.btc_trans_sys.btc_trans_stra.curt_status = BTCTransStrategy1.STATUS.BUYIN;
-							
 							this.btc_trans_sys.btc_curt_position = 10;
-							
-							BTCTotalRecord record	= this.btc_trans_sys.btc_data.BTCRecordOptGetByCycle(0);
 							this.btc_trans_sys.btc_curt_quantity = this.btc_trans_sys.BTC_INIT_AMOUNT / record.close;
+							
+							this.btc_trans_sys.btc_buy_price	= record.close;
+							log.info("TransProcess: buy price:" + record.close);
 							
 							btc_trans_rec.InsertTrans(sDateTime, 
 									BTCTransRecord.OPT.OPT_BUY, 
@@ -104,34 +111,31 @@ public class BTCProcThread extends Thread {
 					}
 					//如果已入场，则判断是否要出场
 					else if (this.btc_trans_sys.btc_trans_stra.curt_status != BTCTransStrategy1.STATUS.READY) {
-						//首先Check状态是否有变化
-						this.btc_trans_sys.btc_trans_stra.CheckStatus(this.btc_trans_sys.btc_data);
 						
 						//判断是否要出场
-						int position = this.btc_trans_sys.btc_trans_stra.IsSell(this.btc_trans_sys.btc_data);
+						int position = this.btc_trans_sys.btc_trans_stra.IsSell();
 						
 						//需要出场
 						if (position > 0) {
 							
-							if (position == 5 && 
-									this.btc_trans_sys.btc_trans_stra.curt_status == BTCTransStrategy1.STATUS.BULL) {
-								this.btc_trans_sys.btc_trans_stra.curt_status = BTCTransStrategy1.STATUS.HALF;
-							}
-							
+							log.info("TransProcess: sell price:" + record.close);
+									
 							this.btc_trans_sys.btc_curt_position -= position;
 							double sell_quantity = this.btc_trans_sys.btc_curt_quantity * position / 10;
 							this.btc_trans_sys.btc_curt_quantity -= sell_quantity;
 							
-							BTCTotalRecord record	= this.btc_trans_sys.btc_data.BTCRecordOptGetByCycle(0);
+							this.btc_trans_sys.btc_profit	+= ((record.close - this.btc_trans_sys.btc_buy_price) * sell_quantity); 
+							this.btc_trans_sys.btc_accumulate_profit	+= this.btc_trans_sys.btc_profit;
+							
+							if (this.btc_trans_sys.btc_curt_position == 0) {
+								log.info("TransProcess: this profit:" + this.btc_trans_sys.btc_profit + ", accu profit:" + this.btc_trans_sys.btc_accumulate_profit);
+								this.btc_trans_sys.btc_profit	= 0;
+							}
 							
 							btc_trans_rec.InsertTrans(sDateTime, 
 									BTCTransRecord.OPT.OPT_SELL, 
 									sell_quantity, 
 									record.close);
-							
-							if (this.btc_trans_sys.btc_curt_position == 0) {
-								this.btc_trans_sys.btc_trans_stra.Init();
-							}
 						}
 					}
 				}
