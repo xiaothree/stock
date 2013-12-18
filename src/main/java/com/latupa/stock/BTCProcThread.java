@@ -125,9 +125,10 @@ public class BTCProcThread extends Thread {
 							this.btc_trans_sys.btc_curt_quantity -= sell_quantity;
 							
 							this.btc_trans_sys.btc_profit	+= ((record.close - this.btc_trans_sys.btc_buy_price) * sell_quantity); 
-							this.btc_trans_sys.btc_accumulate_profit	+= this.btc_trans_sys.btc_profit;
+							
 							
 							if (this.btc_trans_sys.btc_curt_position == 0) {
+								this.btc_trans_sys.btc_accumulate_profit	+= this.btc_trans_sys.btc_profit;
 								log.info("TransProcess: this profit:" + this.btc_trans_sys.btc_profit + ", accu profit:" + this.btc_trans_sys.btc_accumulate_profit);
 								this.btc_trans_sys.btc_profit	= 0;
 							}

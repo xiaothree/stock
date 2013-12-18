@@ -114,14 +114,14 @@ public class BTCTransStrategy1 implements BTCTransStrategy {
 		
 		if (this.is_bull) {
 			if (this.is_macd_up) {
-				this.curt_status	= STATUS.READY;
-				log.info("TransProcess: buy for bull && macd_up, status from " + STATUS.READY + " to " + STATUS.BUYIN);
+				this.curt_status	= STATUS.BULL;
+				log.info("TransProcess: buy for bull && macd_up, status from " + STATUS.READY + " to " + STATUS.BULL);
 				return true;
 			}
 			
 			if (this.is_boll_up) {
-				this.curt_status	= STATUS.READY;
-				log.info("TransProcess: buy for bull && boll_up, status from " + STATUS.READY + " to " + STATUS.BUYIN);
+				this.curt_status	= STATUS.BULL;
+				log.info("TransProcess: buy for bull && boll_up, status from " + STATUS.READY + " to " + STATUS.BULL);
 				return true;
 			}
 		}
@@ -146,7 +146,7 @@ public class BTCTransStrategy1 implements BTCTransStrategy {
 			}
 			if (this.is_macd_top) {
 				this.curt_status	= STATUS.HALF;
-				log.info("TransProcess: sell for dead_cross in buy, status from " + STATUS.BUYIN + " to " + STATUS.HALF);
+				log.info("TransProcess: sell for macd_top in buy, status from " + STATUS.BUYIN + " to " + STATUS.HALF);
 				return 5;
 			}
 		}
