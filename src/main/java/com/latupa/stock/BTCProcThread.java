@@ -33,6 +33,9 @@ public class BTCProcThread extends Thread {
 		
 		long last_stamp_sec = 0;
 		
+		//从数据库mock数值的初始化
+		this.btc_trans_sys.btc_data.UpdateMockInit();
+		
 		while (true) {
 			
 			stamp_millis = System.currentTimeMillis();
@@ -52,6 +55,11 @@ public class BTCProcThread extends Thread {
 			if ((stamp_sec % this.btc_trans_sys.cycle_data == 0) && 
 					(this.btc_trans_sys.btc_data.btc_s_record.init_flag == false)) {
 				log.info("start update to system");
+				
+				//每次mock一条
+				if (this.btc_trans_sys.btc_data.UpdateMockGet() == false) {
+					System.exit(0);
+				}
 				
 				Date cur_date = new Date(stamp_millis);
 				String sDateTime = df.format(cur_date); 

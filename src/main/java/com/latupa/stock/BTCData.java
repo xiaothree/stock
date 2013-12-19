@@ -7,9 +7,12 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.Random;
 import java.util.TreeMap;
 
@@ -96,6 +99,10 @@ public class BTCData {
 	
 	//用于生成伪随机值
 	public double price_mock;
+	 
+	//用于记录从数据库mock的数据, <day, close>
+	public TreeMap<Integer, Double> update_mock_map = new TreeMap<Integer, Double>();
+	public Iterator<Integer> update_mock_it;
 	
 	public BTCData() {
 		this.dbInst	= ConnectDB();
@@ -434,6 +441,50 @@ public class BTCData {
 		}
 		
 		return last;
+	}
+	
+	/**
+	 * 从数据库获取Mock数据
+	 */
+	public void UpdateMockInit() {
+		ResultSet rs = null;
+		
+		String sql	= "select day + 0 as day, close as close from stock_price__sh where is_holiday != 1";
+		rs = dbInst.selectSQL(sql);
+		try {
+			while (rs.next()) {
+
+				int day	= rs.getInt("day");
+				double close	= rs.getDouble("close");
+				this.update_mock_map.put(day, close);
+			}
+			
+			rs.close();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		this.update_mock_it	= this.update_mock_map.keySet().iterator();
+	}
+	
+	/**
+	 * 基于数据库获取的mock数据，每次更新一条
+	 * @return
+	 */
+	public boolean UpdateMockGet() {
+		if (this.update_mock_it.hasNext()) {
+			int day	= this.update_mock_it.next();
+			double close	= this.update_mock_map.get(day);
+			
+			log.debug("mock from db, day:" + day + ", close:" + close);
+			this.btc_s_record.close	= close;
+			this.btc_s_record.open	= day;
+			return true;
+		}
+		else {
+			return false;
+		}
 	}
 	
 	/**
