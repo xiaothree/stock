@@ -86,7 +86,39 @@ public class BTCFunc {
 	}
 	
 	/**
-	 * ema
+	 * ema normal
+	 * @param x
+	 * @param size
+	 * @return
+	 */
+	private double ema1(ArrayList<Double> x, int size) {
+//		std::vector<float> vec;
+//	    int nLen = X.size();
+//	    if(nLen >= 1)
+//	    {
+//	        if(N > nLen) N = nLen;
+//	       
+//	        vec.resize(nLen);
+//	        //vec.reserve(nLen);
+//	        vec[0] = X[0];
+//	        for(int i = 1; i < nLen; i++)
+//	        {
+//	            vec[i] = (2 * X[i] + (N - 1) * vec[i - 1]) / (N + 1);
+//	        }
+//	    }
+//	    return vec;
+		
+		ArrayList<Double> ret = new ArrayList<Double>();
+		ret.add(x.get(0));
+		for (int i = 1; i < size; i++) {
+			ret.add((2 * x.get(i) + (size - 1) * ret.get(i - 1)) / (size + 1));
+		}
+		
+		return ret.get(ret.size() - 1);
+	}
+	
+	/**
+	 * ema recursive
 	 * @param x
 	 * @param n
 	 * @return
@@ -157,8 +189,11 @@ public class BTCFunc {
 		
 		MacdRet mr = new MacdRet();
 		
-		double a13 = ema(close_list_short, p_short, p_short);
-		double a26 = ema(close_list_long, p_long, p_long);
+//		double a13 = ema(close_list_short, p_short, p_short);
+//		double a26 = ema(close_list_long, p_long, p_long);
+		
+		double a13	= ema1(close_list_short, p_short);
+		double a26	= ema1(close_list_long, p_long);
 		
 		mr.diff = a13 - a26;
 		log.debug("macd, diff:" + mr.diff + ", ema13:" + a13 + ", ema26:" + a26);
@@ -179,8 +214,11 @@ public class BTCFunc {
 				close_list_long = GetPriceArray(record_map, tmp_time, p_long);
 				close_list_short = GetPriceArray(record_map, tmp_time, p_short);
 				
-				a13 = ema(close_list_short, p_short, p_short);
-				a26 = ema(close_list_long, p_long, p_long);
+//				a13 = ema(close_list_short, p_short, p_short);
+//				a26 = ema(close_list_long, p_long, p_long);
+				
+				a13	= ema1(close_list_short, p_short);
+				a26	= ema1(close_list_long, p_long);
 				
 				double diff = a13 - a26;
 				log.debug(tmp_time + ":" + diff);
@@ -205,7 +243,8 @@ public class BTCFunc {
 		}
 		
 		Collections.reverse(diff_list);
-		mr.dea = ema(diff_list, p_m, p_m);
+//		mr.dea = ema(diff_list, p_m, p_m);
+		mr.dea	= ema1(diff_list, p_m);
 		
 		mr.macd = 2 * (mr.diff - mr.dea);
 		log.debug("macd, diff:" + mr.diff + ", dea:" + mr.dea + ", macd:" + mr.macd);
