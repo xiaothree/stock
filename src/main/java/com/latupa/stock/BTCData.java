@@ -66,6 +66,7 @@ class BTCTotalRecord extends BTCBasicRecord {
 		this.open	= record.open;
 		this.close	= record.close;
 	}
+	
 }
 	
 /**
@@ -136,6 +137,8 @@ public class BTCData {
 				"`mid` double NOT NULL default '0', " +
 				"`lower` double NOT NULL default '0', " +
 				"`bbi` double NOT NULL default '0', " +
+				"`ema13` double NOT NULL default '0', " +
+				"`ema26` double NOT NULL default '0', " +
 				"`diff` double NOT NULL default '0', " +
 				"`dea` double NOT NULL default '0', " +
 				"`macd` double NOT NULL default '0', " +
@@ -166,14 +169,18 @@ public class BTCData {
 	 * @return
 	 */
 	public BTCTotalRecord BTCRecordOptGetByCycle(int cycle) {
+		
+		BTCTotalRecord last_record = null;
+		
 		for (String time : this.b_record_map.descendingKeySet().toArray(new String[0])) {
+			last_record	= this.b_record_map.get(time);
 			if (cycle == 0) {
-				return this.b_record_map.get(time);
+				return last_record;
 			}
 			cycle--;
 		}
 		
-		return null;
+		return last_record;
 	}
 	
 	/**
@@ -248,6 +255,8 @@ public class BTCData {
 		if (this.b_record_map.containsKey(time)) {
 			BTCTotalRecord record = this.b_record_map.get(time);
 			String sql = "update " + BTC_PRICE_TABLE + " set " +
+					"ema13=" + record.macd_record.ema13 + ", " +
+					"ema26=" + record.macd_record.ema26 + ", " +
 					"diff=" + record.macd_record.diff + ", " +
 					"dea=" + record.macd_record.dea + ", " +
 					"macd=" + record.macd_record.macd + 
@@ -271,7 +280,7 @@ public class BTCData {
 	 * @throws ParseException 
 	 */
 	public MacdRet BTCCalcMacd(BTCFunc btc_func, String time, int cycle_data) throws ParseException {
-		return btc_func.macd(this.b_record_map, time, cycle_data);
+		return btc_func.macd(this);
 	}
 	
 	/**

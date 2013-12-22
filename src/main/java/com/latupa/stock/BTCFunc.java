@@ -86,35 +86,14 @@ public class BTCFunc {
 	}
 	
 	/**
-	 * ema normal
-	 * @param x
-	 * @param size
+	 * ema 每个交易日计算，因此只需要前一日的ema即可
+	 * @param curt_close
+	 * @param last_ema 上一个交易日的ema
+	 * @param size ema的周期
 	 * @return
 	 */
-	private double ema1(ArrayList<Double> x, int size) {
-//		std::vector<float> vec;
-//	    int nLen = X.size();
-//	    if(nLen >= 1)
-//	    {
-//	        if(N > nLen) N = nLen;
-//	       
-//	        vec.resize(nLen);
-//	        //vec.reserve(nLen);
-//	        vec[0] = X[0];
-//	        for(int i = 1; i < nLen; i++)
-//	        {
-//	            vec[i] = (2 * X[i] + (N - 1) * vec[i - 1]) / (N + 1);
-//	        }
-//	    }
-//	    return vec;
-		
-		ArrayList<Double> ret = new ArrayList<Double>();
-		ret.add(x.get(0));
-		for (int i = 1; i < size; i++) {
-			ret.add((2 * x.get(i) + (size - 1) * ret.get(i - 1)) / (size + 1));
-		}
-		
-		return ret.get(ret.size() - 1);
+	private double ema2(double curt_close,  double last_ema, int size) {
+		return ((2 * curt_close + (size - 1) * last_ema) / (size + 1));
 	}
 	
 	/**
@@ -135,119 +114,82 @@ public class BTCFunc {
 	
 	
 	/**
+	 * 截取整个map的一部分
 	 * @param record_map 数据映射
 	 * @param p_time 指定某个时间的布林线
 	 * @param pre_cycles 获取pre_cycles的数据
 	 * @return
 	 */
-	private ArrayList<Double> GetPriceArray(TreeMap<String, BTCTotalRecord> record_map, String p_time, int pre_cycles) {
-		ArrayList<Double> close_list = new ArrayList<Double>();
+	private ArrayList<BTCTotalRecord> GetEMAPriceArray(TreeMap<String, BTCTotalRecord> record_map, String p_time, int pre_cycles) {
+		ArrayList<BTCTotalRecord> cut_list = new ArrayList<BTCTotalRecord>();
 		 
-		double last_close = 0.0;
+		BTCTotalRecord last_record	= null;
 		int count = 0;
 		//先以时间降序写入到数组中
 		for (String time : record_map.headMap(p_time, true).descendingKeySet().toArray(new String[0])) {
 			BTCTotalRecord record = record_map.get(time);
-			//保留三位小数
-//			BigDecimal bg = new BigDecimal(pr.close);
-//	        pr.close = bg.setScale(4, BigDecimal.ROUND_HALF_UP).doubleValue();
-			close_list.add(count, record.close);
+			
+			cut_list.add(count, record);
 			count++;
-			last_close = record.close;
+			last_record = record;
 			if (count == pre_cycles) {
 				break;
 			}
 		}
+
+		if (last_record.macd_record == null) {
+			last_record.macd_record.ema13	= last_record.close;
+			last_record.macd_record.ema26	= last_record.close;
+		}
 		
 		while (count < pre_cycles) {
-			close_list.add(count, last_close);
+			cut_list.add(count, last_record);
 			count++;
 		}
 		
 		//转换成时间和数组位置成正序
-		Collections.reverse(close_list);
+		Collections.reverse(cut_list);
 		
-		return close_list;
+		return cut_list;
 	}
 	
 	/**
 	 * MACD计算公式
 	 * y=ema(x,n), y=[2*x+(n-1)y']/(n+1),其中y'表示上一周期y的值
-	 * @param record_map 数据映射
-	 * @param p_time 指定某个时间的布林线
-	 * @param cycle_data K线周期长度
+	 * @param btc_data 数据
 	 * @return
 	 * @throws ParseException
 	 */
-	public MacdRet macd(TreeMap<String, BTCTotalRecord> record_map, String p_time, int cycle_data) throws ParseException {
-		int p_long = 26;
+	public MacdRet macd(BTCData btc_data) throws ParseException {
 		int p_short = 13;
+		int p_long = 26;
 		int p_m = 9;
 		
-		ArrayList<Double> close_list_long = GetPriceArray(record_map, p_time, p_long);
-		ArrayList<Double> close_list_short = GetPriceArray(record_map, p_time, p_short);
+		BTCTotalRecord record	= btc_data.BTCRecordOptGetByCycle(0);
+		BTCTotalRecord record_1cycle_before	= btc_data.BTCRecordOptGetByCycle(1);
+		
+		double ema13;
+		double ema26;
+		double diff_ema9;
+		if (record_1cycle_before.macd_record == null) {
+			ema13	= record.close;
+			ema26	= record.close;
+			diff_ema9	= ema13 - ema26;
+		}
+		else {
+			ema13	= ema2(record.close, record_1cycle_before.macd_record.ema13, p_short);
+			ema26	= ema2(record.close, record_1cycle_before.macd_record.ema26, p_long);
+			diff_ema9	= ema2(ema13 - ema26, record_1cycle_before.macd_record.dea, p_m);
+		}
 		
 		MacdRet mr = new MacdRet();
 		
-//		double a13 = ema(close_list_short, p_short, p_short);
-//		double a26 = ema(close_list_long, p_long, p_long);
-		
-		double a13	= ema1(close_list_short, p_short);
-		double a26	= ema1(close_list_long, p_long);
-		
-		mr.diff = a13 - a26;
-		log.debug("macd, diff:" + mr.diff + ", ema13:" + a13 + ", ema26:" + a26);
-		
-		//计算9天的DIFF，为计算DEA准备数据（需要剔除掉非交易日的数据）！！！！
-		ArrayList<Double> diff_list = new ArrayList<Double>();
-		DateFormat format = new SimpleDateFormat("yyyyMMddHHmmss");
-		Date date = format.parse(p_time);
-		int count = 0;
-		int i = 0;
-		double last_diff = 0;
-		while (true) {
-			long tm = (date.getTime() / 1000 - i * cycle_data) * 1000;
-			Date tmp_date = new Date(tm);
-			String tmp_time = format.format(tmp_date);
-			
-			if (record_map.containsKey(tmp_time)) {
-				close_list_long = GetPriceArray(record_map, tmp_time, p_long);
-				close_list_short = GetPriceArray(record_map, tmp_time, p_short);
-				
-//				a13 = ema(close_list_short, p_short, p_short);
-//				a26 = ema(close_list_long, p_long, p_long);
-				
-				a13	= ema1(close_list_short, p_short);
-				a26	= ema1(close_list_long, p_long);
-				
-				double diff = a13 - a26;
-				log.debug(tmp_time + ":" + diff);
-				//保留三位小数
-//				BigDecimal bg = new BigDecimal(diff);
-//		        diff = bg.setScale(2, BigDecimal.ROUND_DOWN).doubleValue();
-				diff_list.add(diff);
-				last_diff = diff;
-				
-				count++;
-				if (count >= p_m || record_map.firstKey().equals(tmp_time)) {
-					break;
-				}
-			}
-			i++;
-		}
-		
-		while (count < p_m) {
-			log.debug("add" + last_diff);
-			diff_list.add(last_diff);
-			count++;
-		}
-		
-		Collections.reverse(diff_list);
-//		mr.dea = ema(diff_list, p_m, p_m);
-		mr.dea	= ema1(diff_list, p_m);
-		
-		mr.macd = 2 * (mr.diff - mr.dea);
-		log.debug("macd, diff:" + mr.diff + ", dea:" + mr.dea + ", macd:" + mr.macd);
+		mr.ema13	= ema13;
+		mr.ema26	= ema26;
+		mr.diff		= ema13 - ema26;
+		mr.dea		= diff_ema9;
+		mr.macd		= 2 * (mr.diff - mr.dea);
+		log.debug("macd, diff:" + mr.diff + ", dea:" + mr.dea + ", macd:" + mr.macd + ", ema13:" + ema13 + ", ema26:" + ema26);
 		
 		return mr;
 	}

@@ -47,6 +47,8 @@ class MacdRet {
 	double diff;
 	double dea;
 	double macd;
+	double ema13;
+	double ema26;
 	
 	public MacdRet() {
 	}
@@ -56,6 +58,8 @@ class MacdRet {
 			this.diff	= macdret.diff;
 			this.dea	= macdret.dea;
 			this.macd	= macdret.macd;
+			this.ema13	= macdret.ema13;
+			this.ema26	= macdret.ema26;
 		}
 	}
 }

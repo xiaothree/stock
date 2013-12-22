@@ -104,7 +104,6 @@ public class BTCProcThread extends Thread {
 						
 						if (this.btc_trans_sys.btc_trans_stra.IsBuy() == true) {
 							
-							this.btc_trans_sys.btc_trans_stra.curt_status = BTCTransStrategy1.STATUS.BUYIN;
 							this.btc_trans_sys.btc_curt_position = 10;
 							this.btc_trans_sys.btc_curt_quantity = this.btc_trans_sys.BTC_INIT_AMOUNT / record.close;
 							
