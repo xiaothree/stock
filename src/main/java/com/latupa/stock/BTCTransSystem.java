@@ -27,10 +27,16 @@ public class BTCTransSystem {
 	//初始资金
 	public final double BTC_INIT_AMOUNT = 10000;
 	
+	public double btc_curt_amount;
+	
 	public double btc_buy_price;
 	public double btc_profit;
 	public double btc_accumulate_profit;
 	public int btc_trans_count;
+	
+	public final double BTC_FEE	= 0.003;
+	public double btc_fee_cost;
+	public double btc_accumulate_fee_cost;
 	
 	//K线数
 	public int btc_k_cycles = 0;
@@ -47,19 +53,24 @@ public class BTCTransSystem {
 	public BTCTransSystem(int cycle_data, int cycle_fetch) {
 		this.cycle_data		= cycle_data;
 		this.cycle_fetch	= cycle_fetch;
+		
 		this.btc_curt_quantity	= 0;
 		this.btc_curt_position	= 0;
+		
+		this.btc_curt_amount	= this.BTC_INIT_AMOUNT;
 		this.btc_profit			= 0;
 		this.btc_accumulate_profit	= 0;
 		this.btc_trans_count	= 0;
+		this.btc_fee_cost		= 0;
+		this.btc_accumulate_fee_cost	= 0;
 	}
 	
 	public void Route() {
 		
-		BTCUpdateThread btc_update_thread = new BTCUpdateThread(this);
-		btc_update_thread.start();
+//		BTCUpdateThread btc_update_thread = new BTCUpdateThread(this);
+//		btc_update_thread.start();
 		
-		BTCProcThread btc_proc_thread = new BTCProcThread(this);
+		BTCProcThread btc_proc_thread = new BTCProcThread(this, 1);
 		btc_proc_thread.start();
 	}
 

@@ -64,10 +64,13 @@ public class BTCTransStrategy1 implements BTCTransStrategy {
 		BTCTotalRecord record_2cycle_before	= btc_data.BTCRecordOptGetByCycle(2);
 		
 		//多头
+//		if ((record.ma_record.ma5 > record.ma_record.ma10 && 
+//				record.ma_record.ma10 > record.ma_record.ma20 &&
+//				record.ma_record.ma20 > record.ma_record.ma30 &&
+//				record.ma_record.ma30 > record.ma_record.ma60)) {
 		if ((record.ma_record.ma5 > record.ma_record.ma10 && 
 				record.ma_record.ma10 > record.ma_record.ma20 &&
-				record.ma_record.ma20 > record.ma_record.ma30 &&
-				record.ma_record.ma30 > record.ma_record.ma60)) {
+				record.ma_record.ma20 > record.ma_record.ma30)) {
 			this.is_bull	= true;
 		}
 		
@@ -96,6 +99,12 @@ public class BTCTransStrategy1 implements BTCTransStrategy {
 			this.is_macd_up	= true;
 		}
 		
+		//macd绿线变短再变长
+		if (record.macd_record.macd < 0 &&
+				record_2cycle_before.macd_record.macd < record_1cycle_before.macd_record.macd &&
+				record.macd_record.macd < record_1cycle_before.macd_record.macd) {
+			this.is_macd_down	= true;
+		}
 		//macd顶
 		if (record.macd_record.macd > 0 &&
 				record_2cycle_before.macd_record.macd < record_1cycle_before.macd_record.macd &&
@@ -156,9 +165,16 @@ public class BTCTransStrategy1 implements BTCTransStrategy {
 				log.info("TransProcess: sell for dead_cross in half, status from " + STATUS.HALF + " to " + STATUS.READY);
 				return 5;
 			}
+			
 			if (this.is_macd_top) {
 				this.curt_status	= STATUS.READY;
 				log.info("TransProcess: sell for macd_top in half, status from " + STATUS.HALF + " to " + STATUS.READY);
+				return 5;
+			}
+			
+			if (this.is_macd_down) {
+				this.curt_status	= STATUS.READY;
+				log.info("TransProcess: sell for macd_down in half, status from " + STATUS.HALF + " to " + STATUS.READY);
 				return 5;
 			}
 		}

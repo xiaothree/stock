@@ -345,7 +345,7 @@ public class BTCData {
 			this.b_record_map.put(time, record);
 		}
 		else {
-			log.error("time " + time + "is not in mem");
+			log.error("time " + time + " is not in mem");
 			System.exit(1);
 		}
 	}
@@ -362,7 +362,7 @@ public class BTCData {
 			this.b_record_map.put(time, record);
 		}
 		else {
-			log.error("time " + time + "is not in mem");
+			log.error("time " + time + " is not in mem");
 			System.exit(1);
 		}
 	}
@@ -489,6 +489,7 @@ public class BTCData {
 			log.debug("mock from db, day:" + day + ", close:" + close);
 			this.btc_s_record.close	= close;
 			this.btc_s_record.open	= day;
+			this.btc_s_record.init_flag	= false;
 			return true;
 		}
 		else {
