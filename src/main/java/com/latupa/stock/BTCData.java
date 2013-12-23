@@ -399,8 +399,8 @@ public class BTCData {
 	 */
 	public synchronized boolean BTCSliceRecordUpdate() {
 		
-		double last = FetchMock();
-//		double last = FetchRT();
+//		double last = FetchMock();
+		double last = FetchRT();
 //		double last = FetchRTWeb();
 		
 		//获取失败，则不用更新

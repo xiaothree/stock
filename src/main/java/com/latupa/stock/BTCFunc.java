@@ -1,11 +1,7 @@
 package com.latupa.stock;
 
-import java.text.DateFormat;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
 import java.util.TreeMap;
 
 import org.apache.commons.logging.Log;
@@ -102,15 +98,15 @@ public class BTCFunc {
 	 * @param n
 	 * @return
 	 */
-	private double ema(ArrayList<Double> x, int n, int size) {
+//	private double ema(ArrayList<Double> x, int n, int size) {
 //		log.debug("n:" + n + "->" + x.get(n - 1));
-		if (n == 1) {
-			return x.get(n - 1);
-		}
-		else {
-			return (2 * x.get(n - 1) + (size - 1) * ema(x, n - 1, size)) / (size + 1);
-		}
-	}
+//		if (n == 1) {
+//			return x.get(n - 1);
+//		}
+//		else {
+//			return (2 * x.get(n - 1) + (size - 1) * ema(x, n - 1, size)) / (size + 1);
+//		}
+//	}
 	
 	
 	/**
@@ -120,38 +116,38 @@ public class BTCFunc {
 	 * @param pre_cycles 获取pre_cycles的数据
 	 * @return
 	 */
-	private ArrayList<BTCTotalRecord> GetEMAPriceArray(TreeMap<String, BTCTotalRecord> record_map, String p_time, int pre_cycles) {
-		ArrayList<BTCTotalRecord> cut_list = new ArrayList<BTCTotalRecord>();
-		 
-		BTCTotalRecord last_record	= null;
-		int count = 0;
-		//先以时间降序写入到数组中
-		for (String time : record_map.headMap(p_time, true).descendingKeySet().toArray(new String[0])) {
-			BTCTotalRecord record = record_map.get(time);
-			
-			cut_list.add(count, record);
-			count++;
-			last_record = record;
-			if (count == pre_cycles) {
-				break;
-			}
-		}
-
-		if (last_record.macd_record == null) {
-			last_record.macd_record.ema13	= last_record.close;
-			last_record.macd_record.ema26	= last_record.close;
-		}
-		
-		while (count < pre_cycles) {
-			cut_list.add(count, last_record);
-			count++;
-		}
-		
-		//转换成时间和数组位置成正序
-		Collections.reverse(cut_list);
-		
-		return cut_list;
-	}
+//	private ArrayList<BTCTotalRecord> GetEMAPriceArray(TreeMap<String, BTCTotalRecord> record_map, String p_time, int pre_cycles) {
+//		ArrayList<BTCTotalRecord> cut_list = new ArrayList<BTCTotalRecord>();
+//		 
+//		BTCTotalRecord last_record	= null;
+//		int count = 0;
+//		//先以时间降序写入到数组中
+//		for (String time : record_map.headMap(p_time, true).descendingKeySet().toArray(new String[0])) {
+//			BTCTotalRecord record = record_map.get(time);
+//			
+//			cut_list.add(count, record);
+//			count++;
+//			last_record = record;
+//			if (count == pre_cycles) {
+//				break;
+//			}
+//		}
+//
+//		if (last_record.macd_record == null) {
+//			last_record.macd_record.ema13	= last_record.close;
+//			last_record.macd_record.ema26	= last_record.close;
+//		}
+//		
+//		while (count < pre_cycles) {
+//			cut_list.add(count, last_record);
+//			count++;
+//		}
+//		
+//		//转换成时间和数组位置成正序
+//		Collections.reverse(cut_list);
+//		
+//		return cut_list;
+//	}
 	
 	/**
 	 * MACD计算公式

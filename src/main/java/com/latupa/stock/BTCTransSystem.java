@@ -30,6 +30,7 @@ public class BTCTransSystem {
 	public double btc_buy_price;
 	public double btc_profit;
 	public double btc_accumulate_profit;
+	public int btc_trans_count;
 	
 	//K线数
 	public int btc_k_cycles = 0;
@@ -50,6 +51,7 @@ public class BTCTransSystem {
 		this.btc_curt_position	= 0;
 		this.btc_profit			= 0;
 		this.btc_accumulate_profit	= 0;
+		this.btc_trans_count	= 0;
 	}
 	
 	public void Route() {
@@ -67,7 +69,7 @@ public class BTCTransSystem {
 	 */
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
-		BTCTransSystem btc_ts = new BTCTransSystem(2, 1);
+		BTCTransSystem btc_ts = new BTCTransSystem(30, 5);
 		btc_ts.Route();
 	}
 }

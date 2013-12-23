@@ -1,6 +1,7 @@
 package com.latupa.stock;
 
 import java.text.DateFormat;
+import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -34,7 +35,7 @@ public class BTCProcThread extends Thread {
 		long last_stamp_sec = 0;
 		
 		//从数据库mock数值的初始化
-		this.btc_trans_sys.btc_data.UpdateMockInit();
+//		this.btc_trans_sys.btc_data.UpdateMockInit();
 		
 		while (true) {
 			
@@ -57,9 +58,9 @@ public class BTCProcThread extends Thread {
 				log.info("start update to system");
 				
 				//每次mock一条
-				if (this.btc_trans_sys.btc_data.UpdateMockGet() == false) {
-					System.exit(0);
-				}
+//				if (this.btc_trans_sys.btc_data.UpdateMockGet() == false) {
+//					System.exit(0);
+//				}
 				
 				Date cur_date = new Date(stamp_millis);
 				String sDateTime = df.format(cur_date); 
@@ -104,6 +105,7 @@ public class BTCProcThread extends Thread {
 						
 						if (this.btc_trans_sys.btc_trans_stra.IsBuy() == true) {
 							
+							this.btc_trans_sys.btc_trans_count++;
 							this.btc_trans_sys.btc_curt_position = 10;
 							this.btc_trans_sys.btc_curt_quantity = this.btc_trans_sys.BTC_INIT_AMOUNT / record.close;
 							
@@ -135,8 +137,13 @@ public class BTCProcThread extends Thread {
 							
 							
 							if (this.btc_trans_sys.btc_curt_position == 0) {
+								
+								DecimalFormat df1 = new DecimalFormat("#0.00");
+								this.btc_trans_sys.btc_trans_count++;
 								this.btc_trans_sys.btc_accumulate_profit	+= this.btc_trans_sys.btc_profit;
-								log.info("TransProcess: this profit:" + this.btc_trans_sys.btc_profit + ", accu profit:" + this.btc_trans_sys.btc_accumulate_profit);
+								log.info("TransProcess: this profit:" + this.btc_trans_sys.btc_profit + "(" + df1.format(this.btc_trans_sys.btc_profit / this.btc_trans_sys.BTC_INIT_AMOUNT * 100) + "%)" + 
+										", accu profit:" + this.btc_trans_sys.btc_accumulate_profit + "(" + df1.format(this.btc_trans_sys.btc_accumulate_profit / this.btc_trans_sys.BTC_INIT_AMOUNT * 100) + "%)" +
+										", accu times:" + this.btc_trans_sys.btc_trans_count);
 								this.btc_trans_sys.btc_profit	= 0;
 							}
 							
