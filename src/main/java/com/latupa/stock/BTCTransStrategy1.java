@@ -1,5 +1,7 @@
 package com.latupa.stock;
 
+import java.text.DecimalFormat;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -26,6 +28,9 @@ public class BTCTransStrategy1 implements BTCTransStrategy {
 	
 	//当前状态
 	public STATUS curt_status = STATUS.READY;
+	
+	//当前价格
+	public double curt_price;
 	
 	//金叉、死叉
 	public boolean is_dead_cross	= false;
@@ -62,6 +67,8 @@ public class BTCTransStrategy1 implements BTCTransStrategy {
 		BTCTotalRecord record	= btc_data.BTCRecordOptGetByCycle(0);
 		BTCTotalRecord record_1cycle_before	= btc_data.BTCRecordOptGetByCycle(1);
 		BTCTotalRecord record_2cycle_before	= btc_data.BTCRecordOptGetByCycle(2);
+		
+		this.curt_price	= record.close;
 		
 		//多头
 //		if ((record.ma_record.ma5 > record.ma_record.ma10 && 
@@ -113,7 +120,7 @@ public class BTCTransStrategy1 implements BTCTransStrategy {
 		}
 	}
 	
-	public boolean IsBuy() {
+	public boolean IsBuy(String sDateTime) {
 		
 //		if (this.is_gold_cross) {
 //			this.curt_status	= STATUS.READY;
@@ -121,16 +128,18 @@ public class BTCTransStrategy1 implements BTCTransStrategy {
 //			return true;
 //		}
 		
+		DecimalFormat df1 = new DecimalFormat("#0.00");
+		
 		if (this.is_bull) {
 			if (this.is_macd_up) {
 				this.curt_status	= STATUS.BULL;
-				log.info("TransProcess: buy for bull && macd_up, status from " + STATUS.READY + " to " + STATUS.BULL);
+				log.info("TransProcess: time:" + sDateTime + ", price:" + df1.format(this.curt_price) + ", buy for bull && macd_up, status from " + STATUS.READY + " to " + STATUS.BULL);
 				return true;
 			}
 			
 			if (this.is_boll_up) {
 				this.curt_status	= STATUS.BULL;
-				log.info("TransProcess: buy for bull && boll_up, status from " + STATUS.READY + " to " + STATUS.BULL);
+				log.info("TransProcess: time:" + sDateTime + ", price:" + df1.format(this.curt_price) + ", buy for bull && boll_up, status from " + STATUS.READY + " to " + STATUS.BULL);
 				return true;
 			}
 		}
@@ -138,44 +147,46 @@ public class BTCTransStrategy1 implements BTCTransStrategy {
 		return false;
 	}
 	
-	public int IsSell() {
+	public int IsSell(String sDateTime) {
+		
+		DecimalFormat df1 = new DecimalFormat("#0.00");
 		
 		if (this.curt_status == STATUS.BULL) {
 			if (this.is_dead_cross) {
 				this.curt_status	= STATUS.HALF;
-				log.info("TransProcess: sell for dead_cross in bull, status from " + STATUS.BULL + " to " + STATUS.HALF);
+				log.info("TransProcess: time:" + sDateTime + ", price:" + df1.format(this.curt_price) + ", sell for dead_cross in bull, status from " + STATUS.BULL + " to " + STATUS.HALF);
 				return 5;
 			}
 		}
 		else if (this.curt_status == STATUS.BUYIN) {
 			if (this.is_dead_cross) {
 				this.curt_status	= STATUS.READY;
-				log.info("TransProcess: sell for dead_cross in buy, status from " + STATUS.BUYIN + " to " + STATUS.READY);
+				log.info("TransProcess: time:" + sDateTime + ", price:" + df1.format(this.curt_price) + ", sell for dead_cross in buy, status from " + STATUS.BUYIN + " to " + STATUS.READY);
 				return 10;
 			}
 			if (this.is_macd_top) {
 				this.curt_status	= STATUS.HALF;
-				log.info("TransProcess: sell for macd_top in buy, status from " + STATUS.BUYIN + " to " + STATUS.HALF);
+				log.info("TransProcess: time:" + sDateTime + ", price:" + df1.format(this.curt_price) + ", sell for macd_top in buy, status from " + STATUS.BUYIN + " to " + STATUS.HALF);
 				return 5;
 			}
 		}
 		else if (this.curt_status == STATUS.HALF) {
 			if (this.is_dead_cross) {
 				this.curt_status	= STATUS.READY;
-				log.info("TransProcess: sell for dead_cross in half, status from " + STATUS.HALF + " to " + STATUS.READY);
-				return 5;
+				log.info("TransProcess: time:" + sDateTime + ", price:" + df1.format(this.curt_price) + ", sell for dead_cross in half, status from " + STATUS.HALF + " to " + STATUS.READY);
+				return 10;
 			}
 			
 			if (this.is_macd_top) {
 				this.curt_status	= STATUS.READY;
-				log.info("TransProcess: sell for macd_top in half, status from " + STATUS.HALF + " to " + STATUS.READY);
-				return 5;
+				log.info("TransProcess: time:" + sDateTime + ", price:" + df1.format(this.curt_price) + ", sell for macd_top in half, status from " + STATUS.HALF + " to " + STATUS.READY);
+				return 10;
 			}
 			
 			if (this.is_macd_down) {
 				this.curt_status	= STATUS.READY;
-				log.info("TransProcess: sell for macd_down in half, status from " + STATUS.HALF + " to " + STATUS.READY);
-				return 5;
+				log.info("TransProcess: time:" + sDateTime + ", price:" + df1.format(this.curt_price) + ", sell for macd_down in half, status from " + STATUS.HALF + " to " + STATUS.READY);
+				return 10;
 			}
 		}
 		

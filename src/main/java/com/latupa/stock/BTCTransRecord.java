@@ -42,14 +42,14 @@ public class BTCTransRecord {
 	
 	public void InsertTrans(String time, OPT opt, double quantity, double price) {
 		
-		String sql = "insert into " + BTC_TRANS_TABLE + 
+		String sql = "insert ignore into " + BTC_TRANS_TABLE + 
 				"(`time`, `opt`, `quantity`, `price`, `amount`) values ('" +
 				time + "', " +
 				opt.ordinal() + ", " +
 				quantity + ", " +
 				price + ", " +
 				(quantity * price) + ")";
-		log.info(sql);
+		log.debug(sql);
 		
 		dbInst.updateSQL(sql);
 	}

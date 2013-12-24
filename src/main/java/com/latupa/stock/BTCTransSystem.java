@@ -32,6 +32,8 @@ public class BTCTransSystem {
 	public double btc_buy_price;
 	public double btc_profit;
 	public double btc_accumulate_profit;
+	
+	public int btc_trans_succ_count;
 	public int btc_trans_count;
 	
 	public final double BTC_FEE	= 0.003;
@@ -60,6 +62,7 @@ public class BTCTransSystem {
 		this.btc_curt_amount	= this.BTC_INIT_AMOUNT;
 		this.btc_profit			= 0;
 		this.btc_accumulate_profit	= 0;
+		this.btc_trans_succ_count	= 0;
 		this.btc_trans_count	= 0;
 		this.btc_fee_cost		= 0;
 		this.btc_accumulate_fee_cost	= 0;
