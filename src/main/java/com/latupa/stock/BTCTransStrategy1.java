@@ -14,6 +14,9 @@ import org.apache.commons.logging.LogFactory;
 		1）是，则等两次死叉，第一次死叉出一半；然后再死叉（或者变长再变短），出另一半
 		2）否，macd一重顶出一半，二重顶再出另一半，如果直接死叉则全部出
  * @author latupa
+ * TODO
+ * 1. 死叉出场的时候防止急剧下跌，增加出场条件，如跌破bbi等
+ * 2. 入场增加场景，比如低位两次金叉等
  */
 public class BTCTransStrategy1 implements BTCTransStrategy {
 	
