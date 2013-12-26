@@ -40,6 +40,8 @@ public class BTCTransSystem {
 	public double btc_fee_cost;
 	public double btc_accumulate_fee_cost;
 	
+	public String btc_time_buyin;
+	
 	//K线数
 	public int btc_k_cycles = 0;
 	
@@ -70,10 +72,10 @@ public class BTCTransSystem {
 	
 	public void Route() {
 		
-//		BTCUpdateThread btc_update_thread = new BTCUpdateThread(this);
-//		btc_update_thread.start();
+		BTCUpdateThread btc_update_thread = new BTCUpdateThread(this);
+		btc_update_thread.start();
 		
-		BTCProcThread btc_proc_thread = new BTCProcThread(this, 1);
+		BTCProcThread btc_proc_thread = new BTCProcThread(this, 0);
 		btc_proc_thread.start();
 	}
 

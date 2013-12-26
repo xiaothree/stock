@@ -47,6 +47,8 @@ public class BTCProcThread extends Thread {
 			
 			if (this.btc_trans_sys.btc_trans_stra.IsBuy(sDateTime) == true) {
 				
+				this.btc_trans_sys.btc_time_buyin	= sDateTime;
+				
 				this.btc_trans_sys.btc_curt_position = 10;
 				this.btc_trans_sys.btc_curt_quantity = this.btc_trans_sys.btc_curt_amount / record.close;
 				this.btc_trans_sys.btc_fee_cost += (this.btc_trans_sys.btc_curt_amount * this.btc_trans_sys.BTC_FEE);
@@ -99,7 +101,7 @@ public class BTCProcThread extends Thread {
 					this.btc_trans_sys.btc_accumulate_profit	+= this.btc_trans_sys.btc_profit;
 					this.btc_trans_sys.btc_accumulate_fee_cost	+= this.btc_trans_sys.btc_fee_cost;
 					
-					log.info("TransProcess: " + "time:" + sDateTime + ", amount:" + df1.format(this.btc_trans_sys.btc_curt_amount) +
+					log.info("TransProcess: " + "time:" + this.btc_trans_sys.btc_time_buyin + "-" + sDateTime + ", amount:" + df1.format(this.btc_trans_sys.btc_curt_amount) +
 							", profit:" + df1.format(this.btc_trans_sys.btc_profit) + "(" + df1.format(this.btc_trans_sys.btc_profit / last_curt_amount * 100) + "%)" + 
 							", accu profit:" + df1.format(this.btc_trans_sys.btc_accumulate_profit) + "(" + df1.format(this.btc_trans_sys.btc_accumulate_profit / this.btc_trans_sys.BTC_INIT_AMOUNT * 100) + "%)" +
 							", fee cost:" + df1.format(this.btc_trans_sys.btc_fee_cost) + "(" + df1.format(this.btc_trans_sys.btc_fee_cost / this.btc_trans_sys.BTC_INIT_AMOUNT * 100) + "%)" + 
