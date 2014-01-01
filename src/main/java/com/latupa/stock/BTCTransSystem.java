@@ -42,6 +42,11 @@ public class BTCTransSystem {
 	
 	public String btc_time_buyin;
 	
+	//记录每年的受益
+	public String btc_year_time;
+	public double btc_year_amount_init;
+	public double btc_year_price_init;
+	
 	//K线数
 	public int btc_k_cycles = 0;
 	
@@ -52,7 +57,7 @@ public class BTCTransSystem {
 	public BTCFunc btc_func = new BTCFunc();
 	
 	//交易策略
-	public BTCTransStrategy1 btc_trans_stra = new BTCTransStrategy1();
+	public BTCTransStrategy2 btc_trans_stra = new BTCTransStrategy2();
 	
 	public BTCTransSystem(int cycle_data, int cycle_fetch) {
 		this.cycle_data		= cycle_data;
@@ -68,14 +73,20 @@ public class BTCTransSystem {
 		this.btc_trans_count	= 0;
 		this.btc_fee_cost		= 0;
 		this.btc_accumulate_fee_cost	= 0;
+		
+		this.btc_year_time	= null;
+		this.btc_year_amount_init	= this.BTC_INIT_AMOUNT;
+		this.btc_year_price_init	= 0;
 	}
 	
 	public void Route() {
 		
-		BTCUpdateThread btc_update_thread = new BTCUpdateThread(this);
-		btc_update_thread.start();
+		//如果从数据库mock信息，则把update thread注释掉，同时proc thread的第二个参数为1
+//		BTCUpdateThread btc_update_thread = new BTCUpdateThread(this);
+//		btc_update_thread.start();
 		
-		BTCProcThread btc_proc_thread = new BTCProcThread(this, 0);
+		
+		BTCProcThread btc_proc_thread = new BTCProcThread(this, 1);
 		btc_proc_thread.start();
 	}
 
@@ -85,7 +96,7 @@ public class BTCTransSystem {
 	 */
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
-		BTCTransSystem btc_ts = new BTCTransSystem(30, 5);
+		BTCTransSystem btc_ts = new BTCTransSystem(300, 10);
 		btc_ts.Route();
 	}
 }

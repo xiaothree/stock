@@ -8,15 +8,20 @@ import org.apache.commons.logging.LogFactory;
 /**
  * 交易策略
       买入：
-	1. macd金叉||（多头&&macd>0&& macd变短再变长）
+	1. 均线支撑 &&（贴布林线上轨 || macd红线变长）
       卖出：
-	1. 是否多头&&贴boll上轨
+	1. 是否多头
 		1）是，则等两次死叉，第一次死叉出一半；然后再死叉（或者变长再变短），出另一半
 		2）否，macd一重顶出一半，二重顶再出另一半，如果直接死叉则全部出
  * @author latupa
  * TODO
- * 1. 死叉出场的时候防止急剧下跌，增加出场条件，如跌破bbi等
- * 2. 入场增加场景，比如低位两次金叉等
+ * 
+ * 上证指数000001复盘
+ * 		1. 出场的两次死叉要提防单边下跌，可以考虑增加跌破bbi或者布林线中轨来快速出场(done，采用跌破bbi)
+ * 		2. 增加底部两次金叉的入场
+ *      3. 对于出场的判断，可以考虑出场的那个点是否还是多头，如果不是，则直接全部出
+ * 个股600104复盘
+ * 		1. 波动比较大，导致来不及出场，或者出场太急，后续又会往上走
  */
 public class BTCTransStrategy1 implements BTCTransStrategy {
 	
@@ -25,7 +30,7 @@ public class BTCTransStrategy1 implements BTCTransStrategy {
 	public enum STATUS {
 		READY,	//待买，即空仓
 		BUYIN,	//买入
-		BULL,	//多头且贴上轨
+		BULL,	//多头（均线支撑，且贴布林线上轨或者macd红线变长
 		HALF;	//半仓
 	};
 	
@@ -44,6 +49,8 @@ public class BTCTransStrategy1 implements BTCTransStrategy {
 	
 	//贴上轨
 	public boolean is_boll_up	= false;
+	public boolean is_boll_bbi_down	= false;
+	public boolean is_boll_mid_down	= false;
 	
 	//macd顶、底
 	public boolean is_macd_top		= false;	//macd>0 顶
@@ -64,6 +71,8 @@ public class BTCTransStrategy1 implements BTCTransStrategy {
 		this.is_macd_bottom	= false;
 		this.is_macd_up		= false;
 		this.is_macd_down	= false;
+		this.is_boll_bbi_down	= false;
+		this.is_boll_mid_down	= false;
 	}
 	
 	public void CheckPoint(BTCData btc_data) {
@@ -85,8 +94,7 @@ public class BTCTransStrategy1 implements BTCTransStrategy {
 		}
 		
 		//贴上轨
-		if (record.close > record.boll_record.upper &&
-						record.close > record.open) {
+		if (record.close > record.boll_record.upper) {
 			this.is_boll_up	= true;
 		}
 		
@@ -120,6 +128,16 @@ public class BTCTransStrategy1 implements BTCTransStrategy {
 				record_2cycle_before.macd_record.macd < record_1cycle_before.macd_record.macd &&
 				record.macd_record.macd < record_1cycle_before.macd_record.macd) {
 			this.is_macd_top	= true;
+		}
+		
+		//跌破bbi
+		if (record.close < record.boll_record.bbi) {
+			this.is_boll_bbi_down	= true;
+		}
+		
+		//跌破布林线中轨
+		if (record.close < record.boll_record.mid) {
+			this.is_boll_mid_down	= true;
 		}
 	}
 	
@@ -156,9 +174,16 @@ public class BTCTransStrategy1 implements BTCTransStrategy {
 		
 		if (this.curt_status == STATUS.BULL) {
 			if (this.is_dead_cross) {
-				this.curt_status	= STATUS.HALF;
-				log.info("TransProcess: time:" + sDateTime + ", price:" + df1.format(this.curt_price) + ", sell for dead_cross in bull, status from " + STATUS.BULL + " to " + STATUS.HALF);
-				return 5;
+				if (this.is_boll_bbi_down) {
+					this.curt_status	= STATUS.READY;
+					log.info("TransProcess: time:" + sDateTime + ", price:" + df1.format(this.curt_price) + ", sell for dead_cross && bbi_down in bull, status from " + STATUS.BULL + " to " + STATUS.READY);
+					return 10;
+				}
+				else {
+					this.curt_status	= STATUS.HALF;
+					log.info("TransProcess: time:" + sDateTime + ", price:" + df1.format(this.curt_price) + ", sell for dead_cross in bull, status from " + STATUS.BULL + " to " + STATUS.HALF);
+					return 5;
+				}
 			}
 		}
 		else if (this.curt_status == STATUS.BUYIN) {
@@ -177,6 +202,12 @@ public class BTCTransStrategy1 implements BTCTransStrategy {
 			if (this.is_dead_cross) {
 				this.curt_status	= STATUS.READY;
 				log.info("TransProcess: time:" + sDateTime + ", price:" + df1.format(this.curt_price) + ", sell for dead_cross in half, status from " + STATUS.HALF + " to " + STATUS.READY);
+				return 10;
+			}
+			
+			if (this.is_boll_bbi_down) {
+				this.curt_status	= STATUS.READY;
+				log.info("TransProcess: time:" + sDateTime + ", price:" + df1.format(this.curt_price) + ", sell for bbi_down in half, status from " + STATUS.HALF + " to " + STATUS.READY);
 				return 10;
 			}
 			

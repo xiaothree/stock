@@ -43,7 +43,7 @@ public class BTCProcThread extends Thread {
 		DecimalFormat df1 = new DecimalFormat("#0.00");
 		
 		//如果还未入场，则判断是否要入场
-		if (this.btc_trans_sys.btc_trans_stra.curt_status == BTCTransStrategy1.STATUS.READY) {
+		if (this.btc_trans_sys.btc_trans_stra.curt_status == BTCTransStrategy2.STATUS.READY) {
 			
 			if (this.btc_trans_sys.btc_trans_stra.IsBuy(sDateTime) == true) {
 				
@@ -66,7 +66,7 @@ public class BTCProcThread extends Thread {
 			}
 		}
 		//如果已入场，则判断是否要出场
-		else if (this.btc_trans_sys.btc_trans_stra.curt_status != BTCTransStrategy1.STATUS.READY) {
+		else if (this.btc_trans_sys.btc_trans_stra.curt_status != BTCTransStrategy2.STATUS.READY) {
 			
 			//判断是否要出场
 			int position_rate = this.btc_trans_sys.btc_trans_stra.IsSell(sDateTime);
@@ -109,6 +109,8 @@ public class BTCProcThread extends Thread {
 							", accu times:" + this.btc_trans_sys.btc_trans_count + ", accu succ times:" + this.btc_trans_sys.btc_trans_succ_count + "(" + df1.format((double)this.btc_trans_sys.btc_trans_succ_count / (double)this.btc_trans_sys.btc_trans_count * 100) + "%)");
 					this.btc_trans_sys.btc_profit	= 0;
 					this.btc_trans_sys.btc_fee_cost	= 0;
+					
+					
 				}
 				
 				btc_trans_rec.InsertTrans(sDateTime, 
@@ -116,6 +118,24 @@ public class BTCProcThread extends Thread {
 						sell_quantity, 
 						record.close);
 			}
+		}
+		
+		//初始化记录每年信息的起始年
+		if (this.btc_trans_sys.btc_year_time == null) {
+			this.btc_trans_sys.btc_year_time = sDateTime.substring(0, 4);
+			this.btc_trans_sys.btc_year_price_init = record.close;
+		}
+		//记录每年年终信息
+		else if (!sDateTime.substring(0, 4).equals(this.btc_trans_sys.btc_year_time)) {
+			log.info("TransProcess: year:" + this.btc_trans_sys.btc_year_time +
+					", price init:" + df1.format(this.btc_trans_sys.btc_year_price_init) +
+					", price last:" + df1.format(record.close) + "(" + df1.format((record.close - this.btc_trans_sys.btc_year_price_init) / this.btc_trans_sys.btc_year_price_init * 100) + "%)" +
+					", amount init:" + df1.format(this.btc_trans_sys.btc_year_amount_init) +
+					", amount last:" + df1.format(this.btc_trans_sys.btc_curt_amount) + "(" + df1.format((this.btc_trans_sys.btc_curt_amount - this.btc_trans_sys.btc_year_amount_init) / this.btc_trans_sys.btc_year_amount_init * 100) + "%)");
+			
+			this.btc_trans_sys.btc_year_time = sDateTime.substring(0, 4);
+			this.btc_trans_sys.btc_year_amount_init	= this.btc_trans_sys.btc_curt_amount;
+			this.btc_trans_sys.btc_year_price_init	= record.close;
 		}
 	}
 	

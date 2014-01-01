@@ -17,10 +17,13 @@ public interface BTCTransStrategy {
 	public int IsSell(String sDateTime);
 	
 	/**
-	 * 入场后check状态是否变化
+	 * check状态是否变化
 	 * @param btc_data
 	 */
 	public void CheckPoint(BTCData btc_data);
 	
+	/**
+	 * 初始化相关值
+	 */
 	public void InitPoint();
 }
