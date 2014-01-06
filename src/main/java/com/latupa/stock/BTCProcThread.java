@@ -74,6 +74,8 @@ public class BTCProcThread extends Thread {
 			//需要出场
 			if (position_rate > 0) {
 				
+				this.btc_trans_sys.btc_trans_stra.CleanStatus();
+				
 				double sell_quantity = this.btc_trans_sys.btc_curt_quantity * (double)position_rate / 10;
 				
 				this.btc_trans_sys.btc_curt_position *= (1 - (double)position_rate / 10);

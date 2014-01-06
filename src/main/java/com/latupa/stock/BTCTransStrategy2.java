@@ -145,7 +145,6 @@ public static final Log log = LogFactory.getLog(BTCTransStrategy1.class);
 			if (record_2cycle_before.macd_record.macd < record_1cycle_before.macd_record.macd &&
 					record.macd_record.macd < record_1cycle_before.macd_record.macd) {
 				this.is_macd_down	= true;
-				this.status_is_down_macd	= false;
 				this.is_multi_macd_bottom	= false;
 			}
 			//macd绿线变短
@@ -299,11 +298,37 @@ public static final Log log = LogFactory.getLog(BTCTransStrategy1.class);
 		
 		return 0;
 	}
+	
+	public void CleanStatus() {
+		this.status_is_down_macd	= false;
+	}
 
 	@Override
 	public void InitPoint() {
 		// TODO Auto-generated method stub
+		//二次金叉
+		is_double_gold_cross	= false;
 		
+		//多重底
+		is_multi_macd_bottom	= false;
+		
+		//死叉
+		is_dead_cross	= false;
+		
+		//均线
+		is_ma_support	= false;	//均线支撑
+		is_ma_bull_arrange	= false;	//均线多头排列
+		
+		//贴上轨
+		is_boll_up	= false;
+		is_boll_bbi_down	= false;
+		is_boll_mid_down	= false;
+		
+		//macd顶、底
+		is_macd_top		= false;	//macd>0 顶
+		is_macd_bottom	= false;	//macd<0 底
+		is_macd_up		= false;	//macd>0 变短再变长
+		is_macd_down		= false;	//macd<0 变短再变长
 	}
 	
 }
