@@ -82,11 +82,11 @@ public class BTCTransSystem {
 	public void Route() {
 		
 		//如果从数据库mock信息，则把update thread注释掉，同时proc thread的第二个参数为1
-//		BTCUpdateThread btc_update_thread = new BTCUpdateThread(this);
-//		btc_update_thread.start();
+		BTCUpdateThread btc_update_thread = new BTCUpdateThread(this);
+		btc_update_thread.start();
 		
 		
-		BTCProcThread btc_proc_thread = new BTCProcThread(this, 1);
+		BTCProcThread btc_proc_thread = new BTCProcThread(this, 0);
 		btc_proc_thread.start();
 	}
 
@@ -96,7 +96,7 @@ public class BTCTransSystem {
 	 */
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
-		BTCTransSystem btc_ts = new BTCTransSystem(300, 10);
+		BTCTransSystem btc_ts = new BTCTransSystem(120, 10);
 		btc_ts.Route();
 	}
 }
