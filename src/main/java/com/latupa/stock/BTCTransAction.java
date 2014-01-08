@@ -31,6 +31,28 @@ class UserInfo {
 	}
 }
 
+class TradeRet {
+	public enum STATUS {
+		FAILED,
+		CANCEL,
+		PARTER,
+		TOTAL;
+	};
+	
+	String order_id;
+	STATUS status;
+	String symbol;
+	String type;
+	double price;
+	double amount;
+	double deal_amount;
+	double ave_price;
+	
+	public void Show() {
+		System.out.println("order_id:" + order_id + ", status:" + status + ", symbol:" + symbol + ", type:" + type + ", price:" + price + ", amount:" + amount + ", deal_amount:" + deal_amount + ", ave_price:" + ave_price);
+	}
+}
+
 public class BTCTransAction {
 	
 	public static final Log log = LogFactory.getLog(BTCTransAction.class);
@@ -42,7 +64,7 @@ public class BTCTransAction {
 	public static final String ACTION_FILE_DIR = "src/main/resources/";
 	public static final String action_file = "action.info";
 	
-	public UserInfo userinfo = new UserInfo();
+	public UserInfo user_info = new UserInfo();
 
 	public BTCTransAction() {
 		ReadInfo();
@@ -205,48 +227,162 @@ public class BTCTransAction {
 	}
 	
 	/**
-	 * 获取用户信息
+	 * 获取订单状态
+	 * @param order_id
 	 */
-	public void ApiUserInfo() {
-		String url = "https://www.okcoin.com/api/userinfo.do";
+	public void ApiGetOrder(String order_id) {
+		String url = "https://www.okcoin.com/api/getorder.do";
 		TreeMap<String, String> para = new TreeMap<String, String>();
 		para.put("partner", this.partner);
+		para.put("order_id", order_id);
+		para.put("symbol", "btc_cny");
 		
 		String ret	= HttpPost(url, para);
-		
-		int err_code = 0;
 		
 		try {
 			JSONObject jsonObj = JSONObject.fromObject(ret);
 			if (jsonObj.has("result")) {
 				String s1 = jsonObj.getString("result");
 				if (s1.equals("true")) {
-					JSONObject jsonObj1	= jsonObj.getJSONObject("info").getJSONObject("funds").getJSONObject("free");
-					this.userinfo.btc	= jsonObj1.getDouble("btc");
-					this.userinfo.cny	= jsonObj1.getDouble("cny");
-					this.userinfo.ltc	= jsonObj1.getDouble("ltc");
+					TradeRet trade_ret	= new TradeRet();
 					
-					JSONObject jsonObj2	= jsonObj.getJSONObject("info").getJSONObject("funds").getJSONObject("freezed");
-					this.userinfo.btc_freezed	= jsonObj2.getDouble("btc");
-					this.userinfo.cny_freezed	= jsonObj2.getDouble("cny");
-					this.userinfo.ltc_freezed	= jsonObj2.getDouble("ltc");
-					
-					this.userinfo.Show();
 				}
 				else {
-					err_code	= jsonObj.getInt("errorCode");
+					log.error("parse json failed! json:" + ret);
+					log.error("err_code=" + jsonObj.getInt("errorCode"));
 				}
 			}
 			else {
-				err_code	= 9990;
+				log.error("parse json failed! json:" + ret);
 			}
 		}
 		catch (Exception e) {
 			log.error("parse json failed! json:" + ret, e);
-			err_code	= 9991;
+		}
+		return false;
+	}
+	
+	/**
+	 * 取消订单
+	 * @param order_id
+	 * @return
+	 */
+	public boolean ApiCancelOrder(String order_id) {
+		String url = "https://www.okcoin.com/api/cancelorder.do";
+		TreeMap<String, String> para = new TreeMap<String, String>();
+		para.put("partner", this.partner);
+		para.put("order_id", order_id);
+		para.put("symbol", "btc_cny");
+		
+		String ret	= HttpPost(url, para);
+		
+		try {
+			JSONObject jsonObj = JSONObject.fromObject(ret);
+			if (jsonObj.has("result")) {
+				String s1 = jsonObj.getString("result");
+				if (s1.equals("true")) {
+					return true;
+				}
+				else {
+					log.error("parse json failed! json:" + ret);
+					log.error("err_code=" + jsonObj.getInt("errorCode"));
+				}
+			}
+			else {
+				log.error("parse json failed! json:" + ret);
+			}
+		}
+		catch (Exception e) {
+			log.error("parse json failed! json:" + ret, e);
+		}
+		return false;
+	}
+	
+	/**
+	 * 下单操作
+	 * @param type "buy/sell"
+	 * @param price 价格
+	 * @param amount 交易量
+	 * @return
+	 */
+	public String ApiTrade(String type, double price, double amount) {
+		String url = "https://www.okcoin.com/api/trade.do";
+		TreeMap<String, String> para = new TreeMap<String, String>();
+		para.put("partner", this.partner);
+		para.put("symbol", "btc_cny");
+		para.put("type", type);
+		para.put("rate", Double.toString(price));
+		para.put("amount", Double.toString(amount));
+		
+		String ret	= HttpPost(url, para);
+		
+		try {
+			JSONObject jsonObj = JSONObject.fromObject(ret);
+			if (jsonObj.has("result")) {
+				String s1 = jsonObj.getString("result");
+				if (s1.equals("true")) {
+					String order_id	= jsonObj.getString("order_id");
+					return order_id;
+				}
+				else {
+					log.error("parse json failed! json:" + ret);
+					log.error("err_code=" + jsonObj.getInt("errorCode"));
+				}
+			}
+			else {
+				log.error("parse json failed! json:" + ret);
+			}
+		}
+		catch (Exception e) {
+			log.error("parse json failed! json:" + ret, e);
+		}
+		return null;
+	}
+	
+	/**
+	 * 获取用户信息
+	 */
+	public UserInfo ApiUserInfo() {
+		String url = "https://www.okcoin.com/api/userinfo.do";
+		TreeMap<String, String> para = new TreeMap<String, String>();
+		para.put("partner", this.partner);
+		
+		String ret	= HttpPost(url, para);
+		
+		UserInfo user_info	= null;
+		try {
+			JSONObject jsonObj = JSONObject.fromObject(ret);
+			if (jsonObj.has("result")) {
+				String s1 = jsonObj.getString("result");
+				if (s1.equals("true")) {
+					user_info	= new UserInfo();
+					
+					JSONObject jsonObj1	= jsonObj.getJSONObject("info").getJSONObject("funds").getJSONObject("free");
+					user_info.btc	= jsonObj1.getDouble("btc");
+					user_info.cny	= jsonObj1.getDouble("cny");
+					user_info.ltc	= jsonObj1.getDouble("ltc");
+					
+					JSONObject jsonObj2	= jsonObj.getJSONObject("info").getJSONObject("funds").getJSONObject("freezed");
+					user_info.btc_freezed	= jsonObj2.getDouble("btc");
+					user_info.cny_freezed	= jsonObj2.getDouble("cny");
+					user_info.ltc_freezed	= jsonObj2.getDouble("ltc");
+					
+					user_info.Show();
+				}
+				else {
+					log.error("parse json failed! json:" + ret);
+					log.error("err_code=" + jsonObj.getInt("errorCode"));
+				}
+			}
+			else {
+				log.error("parse json failed! json:" + ret);
+			}
+		}
+		catch (Exception e) {
+			log.error("parse json failed! json:" + ret, e);
 		}
 		
-		System.out.println("err_code=" + err_code);
+		return user_info;
 	}
 	
 	/**
