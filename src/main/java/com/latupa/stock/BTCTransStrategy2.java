@@ -328,7 +328,7 @@ public static final Log log = LogFactory.getLog(BTCTransStrategy1.class);
 		is_macd_top		= false;	//macd>0 顶
 		is_macd_bottom	= false;	//macd<0 底
 		is_macd_up		= false;	//macd>0 变短再变长
-		is_macd_down		= false;	//macd<0 变短再变长
+		is_macd_down	= false;	//macd<0 变短再变长
 	}
 	
 }

@@ -9,8 +9,6 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.List;
-import java.util.Map;
 import java.util.TreeMap;
 
 import net.sf.json.JSONObject;
@@ -70,10 +68,10 @@ class TradeRet {
  * @author latupa
  *
  * TODO
- * 1. 完善api调用日志记录
- * 2. 剥离买卖逻辑到BTCTransAction类中
- * 3. 买卖操作独立线程处理
- * 4. 买卖操作返回实际价格和金额
+ * 1. 完善api调用日志记录		DONE
+ * 2. 剥离买卖逻辑到BTCTransAction类中	DONE
+ * 3. 买卖操作独立线程处理	CANCEL（因为涉及到同步等问题，考虑到K线周期不会太短，先在同一个线程中处理）
+ * 4. 买卖操作返回实际价格和金额	DONE
  */
 public class BTCApi {
 	
@@ -87,8 +85,7 @@ public class BTCApi {
 	public static final String action_file = "action.info";
 	
 	//交易委托的差价
-	public static final int TRADE_DIFF = 5;
-	
+	public static final int TRADE_DIFF = 3;
 
 	public BTCApi() {
 		ReadInfo();
@@ -119,7 +116,7 @@ public class BTCApi {
             // 建立实际的连接
             connection.connect();
             // 获取所有响应头字段
-            Map<String, List<String>> map = connection.getHeaderFields();
+//            Map<String, List<String>> map = connection.getHeaderFields();
             // 遍历所有的响应头字段
 //            for (String key : map.keySet()) {
 //                System.out.println(key + "--->" + map.get(key));
@@ -132,8 +129,7 @@ public class BTCApi {
                 result += line;
             }
         } catch (Exception e) {
-            System.out.println("发送GET请求出现异常！" + e);
-            e.printStackTrace();
+            log.error("发送GET请求出现异常！", e);
         }
         // 使用finally块来关闭输入流
         finally {
@@ -142,7 +138,7 @@ public class BTCApi {
                     in.close();
                 }
             } catch (Exception e2) {
-                e2.printStackTrace();
+            	log.error("关闭输入流出现异常！", e2);
             }
         }
         return result;
@@ -187,8 +183,7 @@ public class BTCApi {
                 result += line;
             }
         } catch (Exception e) {
-            System.out.println("发送 POST 请求出现异常！"+e);
-            e.printStackTrace();
+            log.error("发送 POST请求出现异常！", e);
         }
         //使用finally块来关闭输出流、输入流
         finally{
@@ -201,7 +196,7 @@ public class BTCApi {
                 }
             }
             catch(IOException ex){
-                ex.printStackTrace();
+            	log.error("关闭输出、输入流出现异常！", ex);
             }
         }
         return result;
@@ -227,7 +222,7 @@ public class BTCApi {
 		    //System.out.println("result: " + buf.toString());// 32位的加密
 			//System.out.println("result: " + buf.toString().substring(8, 24));// 16位的加密
         } catch (NoSuchAlgorithmException e) {
-        	e.printStackTrace();
+        	log.error("calc md5 failed for str:" + plainText, e);
         	return null;
         }
 	}
@@ -238,16 +233,16 @@ public class BTCApi {
 			String value	= para.get(key);
 			str_para	+= key + "=" + value + "&";
 		}
-		log.info("para:" + str_para);
+		log.debug("para:" + str_para);
 		
 		String str_para_tmp	= str_para.substring(0, str_para.length() - 1) + this.secretKey;
-		log.info("para_tmp:" + str_para_tmp);
+		log.debug("para_tmp:" + str_para_tmp);
 		
 		String md5	= md5(str_para_tmp).toUpperCase();
-		log.info("md5:" + md5);
+		log.debug("md5:" + md5);
 		
 		String ret	= sendPost(url, str_para + "sign=" + md5);
-		log.info("json:" + ret);
+		log.debug("json:" + ret);
 		
 		return ret;
 	}
@@ -328,7 +323,6 @@ public class BTCApi {
 				}
 				else {
 					log.error("parse json failed! json:" + ret);
-					log.error("err_code=" + jsonObj.getInt("errorCode"));
 				}
 			}
 			else {
@@ -364,7 +358,6 @@ public class BTCApi {
 				}
 				else {
 					log.error("parse json failed! json:" + ret);
-					log.error("err_code=" + jsonObj.getInt("errorCode"));
 				}
 			}
 			else {
@@ -448,7 +441,6 @@ public class BTCApi {
 				}
 				else {
 					log.error("parse json failed! json:" + ret);
-					log.error("err_code=" + jsonObj.getInt("errorCode"));
 				}
 			}
 			else {
@@ -496,138 +488,13 @@ public class BTCApi {
 		}
 	}
 	
-	public boolean DoBuy() throws InterruptedException {
-		//获取账户中的金额
-		UserInfo user_info	= null;
-		while (user_info == null) {
-			user_info	= ApiUserInfo();
-			user_info.Show();
-			Thread.sleep(5000);
-		}
-		double cny	= user_info.cny;
-		
-		//获取当前买一价
-		Ticker ticker	= null;
-		while (ticker == null) {
-			ticker	= ApiTicker();
-			ticker.Show();
-			Thread.sleep(1000);
-		}
-		double buy_price	= ticker.buy + TRADE_DIFF;
-		double buy_amount	= cny / (buy_price + TRADE_DIFF);
-		
-		//委托买单
-		System.out.println("buy total cny:" + cny + ", price:" + buy_price + ", amount:" + buy_amount);
-		String order_id	= ApiTrade("buy", buy_price, buy_amount);
-		System.out.println("order_id:" + order_id);
-		
-		//获取委托的结果
-		int count = 0;
-		while (true) {
-			count++;
-			TradeRet trade_ret	= ApiGetOrder(order_id);
-			trade_ret.Show();
-			if (trade_ret.status == TradeRet.STATUS.TOTAL) {
-				return true;
-			}
-			Thread.sleep(5000);
-			
-			if (count == 10) {
-				break;
-			}
-		}
-		
-		//撤销委托
-		boolean ret	= ApiCancelOrder(order_id);
-		while (ret != true) {
-			Thread.sleep(5000);
-			ret	= ApiCancelOrder(order_id);
-		}
-		
-		return true;
-	}
-	
-	/**
-	 * 卖出操作
-	 * @param position 仓位比例
-	 * @return
-	 * @throws InterruptedException
-	 */
-	public boolean DoSell(int position) throws InterruptedException {
-		
-		//获取账户中的数量
-		UserInfo user_info	= null;
-		while (user_info == null) {
-			user_info	= ApiUserInfo();
-			user_info.Show();
-			Thread.sleep(5000);
-		}
-		double sell_amount;
-		if (position == 10) {
-			sell_amount	= user_info.btc;
-		}
-		else {
-			sell_amount	= user_info.btc * position / 10;
-		}
-		
-		//获取当前卖一价
-		Ticker ticker	= null;
-		while (ticker == null) {
-			ticker	= ApiTicker();
-			ticker.Show();
-			Thread.sleep(1000);
-		}
-		double sell_price	= ticker.sell - TRADE_DIFF;
-		
-		//委托卖单
-		System.out.println("sell price:" + sell_price + ", amount:" + sell_amount);
-		String order_id	= ApiTrade("sell", sell_price, sell_amount);
-		System.out.println("order_id:" + order_id);
-		
-		//获取委托的结果
-		int count = 0;
-		while (true) {
-			count++;
-			TradeRet trade_ret	= ApiGetOrder(order_id);
-			trade_ret.Show();
-			if (trade_ret.status == TradeRet.STATUS.TOTAL) {
-				return true;
-			}
-			Thread.sleep(5000);
-			
-			if (count == 10) {
-				break;
-			}
-		}
-		
-		//撤销委托
-		boolean ret	= ApiCancelOrder(order_id);
-		while (ret != true) {
-			Thread.sleep(5000);
-			ret	= ApiCancelOrder(order_id);
-		}
-		
-		return true;
-	}
-	
-	
 	/**
 	 * @param args
 	 */
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
-		BTCApi btc_ta = new BTCApi();
-//		Ticker ticker	= btc_ta.ApiTicker();
-//		ticker.Show();
-		try {
-			btc_ta.DoBuy();
-//			btc_ta.DoSell(10);
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-//		btc_ta.ApiGetOrder("3120891");
+		BTCApi btc_api = new BTCApi();
+		btc_api.ApiGetOrder("123456");
 	}
-
 }
 
