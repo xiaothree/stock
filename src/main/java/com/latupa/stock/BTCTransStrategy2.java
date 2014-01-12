@@ -31,8 +31,10 @@ import org.apache.commons.logging.LogFactory;
 	5. 多重底，一旦macd变红，则之前的多重底取消，重新计算
 	6. 低位二次金叉，DIFF<0, 后一次比前一次要高
 	
+	
  * @author latupa
  * TODO
+ * 1. BUYIN状态，如果绿线变短再变长，是直接清仓还是出一半？
  */
 
 public class BTCTransStrategy2 implements BTCTransStrategy {
