@@ -181,7 +181,7 @@ public class BTCProcThread extends Thread {
 					CalcFunc(sDateTime);
 					
 					this.btc_trans_sys.btc_k_cycles++;
-					if (this.btc_trans_sys.btc_k_cycles >= 5) {
+					if (this.btc_trans_sys.btc_k_cycles >= 30) {
 						ProcTrans(sDateTime);
 					}
 				}
