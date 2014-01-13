@@ -3,6 +3,14 @@ package com.latupa.stock;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+/**
+ * 交易操作
+ * @author latupa
+ *
+ * TODO
+ * 1. 部分成交的处理方式，取决于部分成交是否会成为委托的最终状态，暂不处理
+ */
+
 public class BTCTradeAction {
 	
 	public static final Log log = LogFactory.getLog(BTCTradeAction.class);
@@ -33,54 +41,73 @@ public class BTCTradeAction {
 	}
 	
 	public TradeRet DoBuy() throws InterruptedException {
-		//获取账户中的金额
-		UserInfo user_info	= null;
-		while (user_info == null) {
-			user_info	= btc_api.ApiUserInfo();
-			user_info.Show();
-			Thread.sleep(5000);
-		}
-		double cny	= user_info.cny;
 		
-		//获取当前买一价
-		Ticker ticker	= null;
-		while (ticker == null) {
-			ticker	= btc_api.ApiTicker();
-			ticker.Show();
-			Thread.sleep(1000);
-		}
-		double buy_price	= ticker.buy + BTCApi.TRADE_DIFF;
-		double buy_quantity	= cny / (buy_price + BTCApi.TRADE_DIFF);
+		int buy_count = 0;
 		
-		//委托买单
-		log.info("buy total cny:" + cny + ", price:" + buy_price + ", amount:" + buy_quantity);
-		String order_id	= btc_api.ApiTrade("buy", buy_price, buy_quantity);
-		log.info("order_id:" + order_id);
-		
-		//获取委托的结果
-		int count = 0;
 		while (true) {
-			count++;
-			TradeRet trade_ret	= btc_api.ApiGetOrder(order_id);
-			trade_ret.Show();
-			if (trade_ret.status == TradeRet.STATUS.TOTAL) {
-				return trade_ret;
-			}
-			Thread.sleep(5000);
 			
-			if (count == 10) {
-				break;
+			buy_count++;
+			
+			//获取账户中的金额
+			UserInfo user_info	= null;
+			while (user_info == null) {
+				user_info	= btc_api.ApiUserInfo();
+				user_info.Show();
+				Thread.sleep(5000);
+			}
+			double cny	= user_info.cny;
+			
+			//获取当前买一价
+			Ticker ticker	= null;
+			while (ticker == null) {
+				ticker	= btc_api.ApiTicker();
+				ticker.Show();
+				Thread.sleep(1000);
+			}
+			double buy_price	= ticker.buy + BTCApi.TRADE_DIFF;
+			double buy_quantity	= cny / (buy_price + BTCApi.TRADE_DIFF);
+			
+			//委托买单
+			log.info("buy total cny:" + cny + ", price:" + buy_price + ", amount:" + buy_quantity);
+			String order_id	= btc_api.ApiTrade("buy", buy_price, buy_quantity);
+			log.info("order_id:" + order_id);
+			
+			//获取委托的结果
+			int count = 0;
+//			boolean trade_parter = false;
+			while (true) {
+				count++;
+				TradeRet trade_ret	= btc_api.ApiGetOrder(order_id);
+				trade_ret.Show();
+				if (trade_ret.status == TradeRet.STATUS.TOTAL) {
+					return trade_ret;
+				}
+//				else if (trade_ret.status == TradeRet.STATUS.PARTER) {
+//					trade_parter = true;
+//					break;
+//				}
+				Thread.sleep(5000);
+				
+				if (count == 5) {
+					break;
+				}
+			}
+			
+//			if (trade_parter != true) {
+			
+				//撤销委托
+				boolean ret	= btc_api.ApiCancelOrder(order_id);
+				while (ret != true) {
+					Thread.sleep(5000);
+					ret	= btc_api.ApiCancelOrder(order_id);
+				}
+//			}
+			
+			if (buy_count == 5) {
+				log.error("force buy failed!");
+				return null;
 			}
 		}
-		
-		//撤销委托
-		boolean ret	= btc_api.ApiCancelOrder(order_id);
-		while (ret != true) {
-			Thread.sleep(5000);
-			ret	= btc_api.ApiCancelOrder(order_id);
-		}
-		
-		return null;
 	}
 	
 	/**
@@ -142,9 +169,9 @@ public class BTCTradeAction {
 				if (trade_ret.status == TradeRet.STATUS.TOTAL) {
 					return trade_ret;
 				}
-				else if (trade_ret.status == TradeRet.STATUS.PARTER) {//如果是部分成交，则继续卖出剩余的部分
-					sell_quantity -= trade_ret.deal_amount;
-				}
+//				else if (trade_ret.status == TradeRet.STATUS.PARTER) {//如果是部分成交，则继续卖出剩余的部分
+//					sell_quantity -= trade_ret.deal_amount;
+//				}
 				Thread.sleep(5000);
 				
 				if (count == 5) {
