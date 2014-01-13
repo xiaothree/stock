@@ -164,6 +164,12 @@ public class BTCTransSystem {
 				sell_quantity, 
 				this.btc_sell_price);
 		
+		DecimalFormat df1 = new DecimalFormat("#0.00");
+		log.info("TransProcess[SELL]: quantity:" + df1.format(sell_quantity) +
+				", price:" + df1.format(this.btc_sell_price) +
+				", amount:" + df1.format(sell_quantity * this.btc_sell_price) +
+				", curt position:" + this.btc_curt_position);
+		
 		if (this.btc_curt_position == 0) {//如果清仓
 			
 			//更新交易次数
@@ -194,7 +200,6 @@ public class BTCTransSystem {
 			
 			this.btc_accumulate_fee_cost += this.btc_fee_cost;
 		
-			DecimalFormat df1 = new DecimalFormat("#0.00");
 			log.info("TransProcess[SUMMARY]: " + "time:" + this.btc_time_buyin + "-" + sDateTime + 
 					", amount:" + df1.format(this.btc_curt_amount) +
 					", profit:" + df1.format(this.btc_profit) + "(" + df1.format(this.btc_profit / last_curt_amount * 100) + "%)" + 
