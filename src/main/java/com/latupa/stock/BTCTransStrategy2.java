@@ -20,8 +20,10 @@ import org.apache.commons.logging.LogFactory;
      |                                        |顶                                           |	               
 	 |             低于BBI                    V                      | 
 	 |---------------------------------------HALF <------------------|    
-	     死叉||顶（macd红线变短，或者macd绿线变长）            
-	
+	     死叉||顶（macd红线变短，或者macd绿线变长）                                                 |
+	 ^                                                               |
+	 |---------------------------------------------------------------|
+	                                                                   低于BBI
 	
 	备注：
 	1. 多重底：macd绿线多次变短
@@ -58,7 +60,9 @@ public static final Log log = LogFactory.getLog(BTCTransStrategy1.class);
 	public boolean status_is_down_cross = false;	//低位金叉
 	public double status_down_cross_value	= 0;	//低位金叉的值
 	
-	public boolean status_is_down_macd	= false;	//macd底
+	public int status_down_macd_count	= 0;		//macd底次数
+	
+	public final static int DOWN_MACD_COUNT = 2;	//多重底的数量
 	
 	//二次金叉
 	public boolean is_double_gold_cross	= false;
@@ -152,16 +156,16 @@ public static final Log log = LogFactory.getLog(BTCTransStrategy1.class);
 			//macd绿线变短
 			else if (record_2cycle_before.macd_record.macd > record_1cycle_before.macd_record.macd &&
 					record.macd_record.macd > record_1cycle_before.macd_record.macd) {
+				this.status_down_macd_count++;
+				
 				//之前有过底
-				if (this.status_is_down_macd == true) {
+				if (this.status_down_macd_count >= DOWN_MACD_COUNT) {
 					this.is_multi_macd_bottom	= true;
 				}
-				
-				this.status_is_down_macd	= true;
 			}
 		}
 		else {	//如果macd>=0，则上次低位底失效
-			this.status_is_down_macd	= false;
+			this.status_down_macd_count	= 0;
 		}
 		
 		
@@ -302,7 +306,7 @@ public static final Log log = LogFactory.getLog(BTCTransStrategy1.class);
 	}
 	
 	public void CleanStatus() {
-		this.status_is_down_macd	= false;
+		this.status_down_macd_count	= 0;
 	}
 
 	@Override

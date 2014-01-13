@@ -459,6 +459,7 @@ public class BTCData {
 		ResultSet rs = null;
 		
 		String sql	= "select day + 0 as day, close as close from stock_price__sh where code = '000001' and is_holiday != 1";
+//		String sql	= "select day + 0 as day, close as close from stock_price__sh where code = '000001' and is_holiday != 1 and day >= '20090101'";
 //		String sql	= "select day + 0 as day, close as close from stock_price__sz where code = '399001' and is_holiday != 1";
 
 		rs = dbInst.selectSQL(sql);
