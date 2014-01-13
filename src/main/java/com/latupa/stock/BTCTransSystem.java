@@ -142,7 +142,7 @@ public class BTCTransSystem {
 					this.btc_fee_cost += (this.btc_sell_price * sell_quantity * this.BTC_FEE);
 				}
 				else {
-					log.error("buy action failed!");
+					log.error("sell action failed!");
 					System.exit(0);
 				}
 			} catch (InterruptedException e) {
@@ -201,6 +201,7 @@ public class BTCTransSystem {
 			this.btc_accumulate_fee_cost += this.btc_fee_cost;
 		
 			log.info("TransProcess[SUMMARY]: " + "time:" + this.btc_time_buyin + "-" + sDateTime + 
+					", btc_price:" + this.btc_buy_price + "-" + this.btc_sell_price + "(" + df1.format((this.btc_sell_price - this.btc_buy_price) / this.btc_buy_price * 100) + "%)" + 
 					", amount:" + df1.format(this.btc_curt_amount) +
 					", profit:" + df1.format(this.btc_profit) + "(" + df1.format(this.btc_profit / last_curt_amount * 100) + "%)" + 
 					", accu profit:" + df1.format(this.btc_accumulate_profit) + "(" + df1.format(this.btc_accumulate_profit / this.btc_init_amount * 100) + "%)" +

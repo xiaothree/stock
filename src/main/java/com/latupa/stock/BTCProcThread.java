@@ -165,7 +165,9 @@ public class BTCProcThread extends Thread {
 
 				if ((stamp_sec % this.btc_trans_sys.cycle_data == 0) && 
 						(this.btc_trans_sys.btc_data.btc_s_record.init_flag == false)) {
-					log.info("start update to system");
+					
+					this.btc_trans_sys.btc_k_cycles++;
+					log.info("start update to system:" + this.btc_trans_sys.btc_k_cycles + " records");
 					
 					try {
 						this.btc_trans_sys.TradeModeSwitch();
@@ -180,7 +182,6 @@ public class BTCProcThread extends Thread {
 					
 					CalcFunc(sDateTime);
 					
-					this.btc_trans_sys.btc_k_cycles++;
 					if (this.btc_trans_sys.btc_k_cycles >= 30) {
 						ProcTrans(sDateTime);
 					}
