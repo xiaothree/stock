@@ -159,9 +159,14 @@ public class BTCTradeAction {
 			log.info("sell price:" + sell_price + ", amount:" + sell_quantity);
 			String order_id	= btc_api.ApiTrade("sell", sell_price, sell_quantity);
 			log.info("order_id:" + order_id);
+			if (order_id == null) {
+				log.error("order is null");
+				System.exit(0);
+			}
 			
 			//获取委托的结果
 			int count = 0;
+			boolean is_trade_parter = false;
 			while (true) {
 				count++;
 				TradeRet trade_ret	= btc_api.ApiGetOrder(order_id);
@@ -169,14 +174,21 @@ public class BTCTradeAction {
 				if (trade_ret.status == TradeRet.STATUS.TOTAL) {
 					return trade_ret;
 				}
-//				else if (trade_ret.status == TradeRet.STATUS.PARTER) {//如果是部分成交，则继续卖出剩余的部分
-//					sell_quantity -= trade_ret.deal_amount;
-//				}
-				Thread.sleep(5000);
-				
-				if (count == 5) {
+				else if (trade_ret.status == TradeRet.STATUS.PARTER) {//如果是部分成交，则继续卖出剩余的部分
+					is_trade_parter = true;
+					sell_quantity -= trade_ret.deal_amount;
 					break;
 				}
+				Thread.sleep(5000);
+				
+				if (count == 10) {
+					break;
+				}
+			}
+			
+			//如果是部分成交，则继续卖出剩下部分
+			if (is_trade_parter == true) {
+				continue;
 			}
 			
 			//撤销委托

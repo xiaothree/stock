@@ -30,6 +30,8 @@ class Ticker {
 }
 
 class UserInfo {
+	public static final Log log = LogFactory.getLog(UserInfo.class);
+	
 	double btc;
 	double ltc;
 	double cny;
@@ -37,11 +39,13 @@ class UserInfo {
 	double ltc_freezed;
 	double cny_freezed;
 	public void Show() {
-		System.out.println("btc:" + btc + ", ltc:" + ltc + ", cny:" + cny + ", fbtc:" + btc_freezed + ", fltc:" + ltc_freezed + ", fcny:" + cny_freezed);
+		log.info("btc:" + btc + ", ltc:" + ltc + ", cny:" + cny + ", fbtc:" + btc_freezed + ", fltc:" + ltc_freezed + ", fcny:" + cny_freezed);
 	}
 }
 
 class TradeRet {
+	public static final Log log = LogFactory.getLog(TradeRet.class);
+	
 	public enum STATUS {
 		WAIT,	//未成交
 		CANCEL,	//委托取消
@@ -59,7 +63,7 @@ class TradeRet {
 	double avg_price;
 	
 	public void Show() {
-		System.out.println("order_id:" + order_id + ", status:" + status + ", symbol:" + symbol + ", type:" + type + ", price:" + price + ", amount:" + amount + ", deal_amount:" + deal_amount + ", avg_price:" + avg_price);
+		log.info("order_id:" + order_id + ", status:" + status + ", symbol:" + symbol + ", type:" + type + ", price:" + price + ", amount:" + amount + ", deal_amount:" + deal_amount + ", avg_price:" + avg_price);
 	}
 }
 

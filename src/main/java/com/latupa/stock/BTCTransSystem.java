@@ -10,6 +10,8 @@ import org.apache.commons.logging.LogFactory;
  * BTC交易系统
  * @author latupa
  *
+ * TODO
+ * 1. 切换为真实交易的时候，还需要初始化买卖状态，即BTCTransStrategy
  */
 public class BTCTransSystem {
 	
@@ -360,7 +362,7 @@ public class BTCTransSystem {
 	 */
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
-		BTCTransSystem btc_ts = new BTCTransSystem(120, 20, MODE.ACTUAL);
+		BTCTransSystem btc_ts = new BTCTransSystem(300, 20, MODE.ACTUAL);
 		btc_ts.Route();
 	}
 }
