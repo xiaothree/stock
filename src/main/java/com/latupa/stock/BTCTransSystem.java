@@ -336,8 +336,8 @@ public class BTCTransSystem {
 						log.info("change success");
 					}
 					else {// 卖出失败
-						log.info("change failed! sell btc failed");
-						return;
+						log.error("change failed! sell btc failed");
+						System.exit(0);
 					}
 				}
 			}

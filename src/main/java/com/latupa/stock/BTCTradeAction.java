@@ -74,34 +74,34 @@ public class BTCTradeAction {
 			
 			//获取委托的结果
 			int count = 0;
-//			boolean trade_parter = false;
 			while (true) {
-				count++;
+				
+				Thread.sleep(5000);
+				
 				TradeRet trade_ret	= btc_api.ApiGetOrder(order_id);
 				trade_ret.Show();
 				if (trade_ret.status == TradeRet.STATUS.TOTAL) {
 					return trade_ret;
 				}
-//				else if (trade_ret.status == TradeRet.STATUS.PARTER) {
-//					trade_parter = true;
-//					break;
-//				}
-				Thread.sleep(5000);
 				
+				count++;
 				if (count == 5) {
 					break;
 				}
 			}
 			
-//			if (trade_parter != true) {
-			
-				//撤销委托
-				boolean ret	= btc_api.ApiCancelOrder(order_id);
-				while (ret != true) {
-					Thread.sleep(5000);
-					ret	= btc_api.ApiCancelOrder(order_id);
+			//撤销委托
+			count = 0;
+			boolean ret	= btc_api.ApiCancelOrder(order_id);
+			while (ret != true) {
+				count++;
+				if (count == 5) {
+					log.error("cancel trade failed!");
+					return null;
 				}
-//			}
+				Thread.sleep(5000);
+				ret	= btc_api.ApiCancelOrder(order_id);
+			}
 			
 			if (buy_count == 5) {
 				log.error("force buy failed!");
@@ -166,7 +166,6 @@ public class BTCTradeAction {
 			
 			//获取委托的结果
 			int count = 0;
-			boolean is_trade_parter = false;
 			while (true) {
 				count++;
 				TradeRet trade_ret	= btc_api.ApiGetOrder(order_id);
@@ -174,29 +173,30 @@ public class BTCTradeAction {
 				if (trade_ret.status == TradeRet.STATUS.TOTAL) {
 					return trade_ret;
 				}
-				else if (trade_ret.status == TradeRet.STATUS.PARTER) {//如果是部分成交，则继续卖出剩余的部分
-					is_trade_parter = true;
-					sell_quantity -= trade_ret.deal_amount;
-					break;
-				}
+				
 				Thread.sleep(5000);
 				
-				if (count == 10) {
+				if (count == 5) {
+					if (trade_ret.status == TradeRet.STATUS.PARTER) {//如果是部分成交，则继续卖出剩余的部分
+						sell_quantity -= trade_ret.deal_amount;
+					}
 					break;
 				}
-			}
-			
-			//如果是部分成交，则继续卖出剩下部分
-			if (is_trade_parter == true) {
-				continue;
 			}
 			
 			//撤销委托
+			count = 0;
 			boolean ret	= btc_api.ApiCancelOrder(order_id);
 			while (ret != true) {
+				count++;
+				if (count == 5) {
+					log.error("cancel trade failed!");
+					return null;
+				}
 				Thread.sleep(5000);
 				ret	= btc_api.ApiCancelOrder(order_id);
 			}
+			
 			
 			if (sell_count == 5) {
 				log.error("force sell failed!");

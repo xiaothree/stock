@@ -251,6 +251,10 @@ public class BTCApi {
 		return ret;
 	}
 	
+	/**
+	 * 获取行情接口
+	 * @return
+	 */
 	public Ticker ApiTicker() {
 		
 		String url = "https://www.okcoin.com/api/ticker.do";
@@ -392,6 +396,10 @@ public class BTCApi {
 		
 		String ret	= HttpPost(url, para);
 		
+		if (ret == "") {
+			return null;
+		}
+		
 		try {
 			JSONObject jsonObj = JSONObject.fromObject(ret);
 			if (jsonObj.has("result")) {
@@ -498,7 +506,16 @@ public class BTCApi {
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 		BTCApi btc_api = new BTCApi();
-		btc_api.ApiGetOrder("123456");
+		String order_id = btc_api.ApiTrade("buy", 4955, 1);
+		try {
+			Thread.sleep(5000);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		boolean ret = btc_api.ApiCancelOrder(order_id);
+		System.out.println("ret:" + ret);
+		btc_api.ApiGetOrder(order_id);
 	}
 }
 
