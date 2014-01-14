@@ -22,6 +22,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 class BTCBasicRecord {
+	public static final Log log = LogFactory.getLog(BTCBasicRecord.class);
+	
 	double high;
 	double low;
 	double open;
@@ -40,7 +42,7 @@ class BTCBasicRecord {
 	
 	public void Show() {
 		DecimalFormat df = new DecimalFormat("#0.00");
-		System.out.println("open:" + this.open + ", " +
+		log.info("open:" + this.open + ", " +
 				"close:" + this.close +", " +
 				"high:" + this.high + ", " +
 				"^" + String.valueOf(df.format((this.high - this.open) / this.open * 100)) + "%, " +
@@ -98,6 +100,8 @@ public class BTCData {
 	public static final String BTC_PRICE_TABLE = "btc_price";
 	public static final String BTC_TRANS_TABLE = "btc_trans";
 	
+	public int data_cycle;
+	
 	//用于生成伪随机值
 	public double price_mock;
 	 
@@ -105,7 +109,8 @@ public class BTCData {
 	public TreeMap<Integer, Double> update_mock_map = new TreeMap<Integer, Double>();
 	public Iterator<Integer> update_mock_it;
 	
-	public BTCData() {
+	public BTCData(int data_cycle) {
+		this.data_cycle = data_cycle;
 		this.dbInst	= ConnectDB();
 		DBInit();
 		BTCSliceRecordInit();
@@ -121,7 +126,7 @@ public class BTCData {
 	}
 	
 	public void DBInit() {
-		String sql = "create table if not exists " + BTC_PRICE_TABLE + 
+		String sql = "create table if not exists " + BTC_PRICE_TABLE + "__" + this.data_cycle + 
 				"(`time` DATETIME not null default '0000-00-00 00:00:00', " +
 				"`open` double NOT NULL default '0', " +
 				"`close` double NOT NULL default '0', " +
@@ -189,7 +194,7 @@ public class BTCData {
 	 */
 	public void BTCRecordDBInsert(String time) {
 		
-		String sql = "insert ignore into " + BTC_PRICE_TABLE + 
+		String sql = "insert ignore into " + BTC_PRICE_TABLE + "__" + this.data_cycle + 
 				"(`time`, `open`, `close`, `high`, `low`) values ('" +
 				time + "', " +
 				this.btc_s_record.open + ", " +
@@ -208,7 +213,7 @@ public class BTCData {
 	public void BTCMaRetDBUpdate(String time) {
 		if (this.b_record_map.containsKey(time)) {
 			BTCTotalRecord record = this.b_record_map.get(time);
-			String sql = "update " + BTC_PRICE_TABLE + " set " +
+			String sql = "update " + BTC_PRICE_TABLE + "__" + this.data_cycle + " set " +
 					"ma5=" + record.ma_record.ma5 + ", " +
 					"ma10=" + record.ma_record.ma10 + ", " +
 					"ma20=" + record.ma_record.ma20 + ", " +
@@ -232,7 +237,7 @@ public class BTCData {
 	public void BTCBollRetDBUpdate(String time) {
 		if (this.b_record_map.containsKey(time)) {
 			BTCTotalRecord record = this.b_record_map.get(time);
-			String sql = "update " + BTC_PRICE_TABLE + " set " +
+			String sql = "update " + BTC_PRICE_TABLE + "__" + this.data_cycle + " set " +
 					"upper=" + record.boll_record.upper + ", " +
 					"mid=" + record.boll_record.mid + ", " +
 					"lower=" + record.boll_record.lower + ", " +
@@ -254,7 +259,7 @@ public class BTCData {
 	public void BTCMacdRetDBUpdate(String time) {
 		if (this.b_record_map.containsKey(time)) {
 			BTCTotalRecord record = this.b_record_map.get(time);
-			String sql = "update " + BTC_PRICE_TABLE + " set " +
+			String sql = "update " + BTC_PRICE_TABLE + "__" + this.data_cycle + " set " +
 					"ema13=" + record.macd_record.ema13 + ", " +
 					"ema26=" + record.macd_record.ema26 + ", " +
 					"diff=" + record.macd_record.diff + ", " +
@@ -397,16 +402,11 @@ public class BTCData {
 	 * 更新BTCSliceRecord的值
 	 * @throws IOException 
 	 */
-	public synchronized boolean BTCSliceRecordUpdate() {
+	public synchronized void BTCSliceRecordUpdate(double last) {
 		
 //		double last = FetchMock();
-		double last = FetchRT();
+//		double last = FetchRT();
 //		double last = FetchRTWeb();
-		
-		//获取失败，则不用更新
-		if (last == 0) {
-			return false;
-		}
 		
 		if (this.btc_s_record.init_flag == true) {
 			this.btc_s_record.high	= last;
@@ -421,8 +421,7 @@ public class BTCData {
 			this.btc_s_record.close	= last;
 		}
 		
-		btc_s_record.Show();
-		return true;
+		return;
 	}
 	
 	public double FetchRTWeb() throws IOException {
@@ -624,17 +623,6 @@ public class BTCData {
 	 */
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
-		BTCData btc_data = new BTCData();
-		while (true) {
-			try {
-				btc_data.BTCSliceRecordUpdate();
-				Thread.sleep(2000);
-			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
-		
 		
 	}
 
