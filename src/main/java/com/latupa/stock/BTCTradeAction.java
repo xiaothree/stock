@@ -79,9 +79,11 @@ public class BTCTradeAction {
 				Thread.sleep(5000);
 				
 				TradeRet trade_ret	= btc_api.ApiGetOrder(order_id);
-				trade_ret.Show();
-				if (trade_ret.status == TradeRet.STATUS.TOTAL) {
-					return trade_ret;
+				if (trade_ret != null) {
+					trade_ret.Show();
+					if (trade_ret.status == TradeRet.STATUS.TOTAL) {
+						return trade_ret;
+					}
 				}
 				
 				count++;
@@ -167,17 +169,20 @@ public class BTCTradeAction {
 			//获取委托的结果
 			int count = 0;
 			while (true) {
-				count++;
-				TradeRet trade_ret	= btc_api.ApiGetOrder(order_id);
-				trade_ret.Show();
-				if (trade_ret.status == TradeRet.STATUS.TOTAL) {
-					return trade_ret;
-				}
 				
 				Thread.sleep(5000);
 				
+				TradeRet trade_ret	= btc_api.ApiGetOrder(order_id);
+				if (trade_ret != null) {
+					trade_ret.Show();
+					if (trade_ret.status == TradeRet.STATUS.TOTAL) {
+						return trade_ret;
+					}
+				}
+								
+				count++;
 				if (count == 5) {
-					if (trade_ret.status == TradeRet.STATUS.PARTER) {//如果是部分成交，则继续卖出剩余的部分
+					if (trade_ret != null && trade_ret.status == TradeRet.STATUS.PARTER) {//如果是部分成交，则继续卖出剩余的部分
 						sell_quantity -= trade_ret.deal_amount;
 					}
 					break;

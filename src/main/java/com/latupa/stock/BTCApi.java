@@ -307,7 +307,7 @@ public class BTCApi {
 		String ret	= HttpPost(url, para);
 		
 		if (ret == "") {
-			log.error("call failed!" + url );
+			log.error("call failed!" + url);
 			return null;
 		}
 		
