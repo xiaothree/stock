@@ -362,7 +362,7 @@ public class BTCTransSystem {
 	 */
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
-		BTCTransSystem btc_ts = new BTCTransSystem(300, 20, MODE.ACTUAL);
+		BTCTransSystem btc_ts = new BTCTransSystem(120, 20, MODE.ACTUAL);
 		btc_ts.Route();
 	}
 }

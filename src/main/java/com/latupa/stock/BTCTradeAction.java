@@ -147,11 +147,11 @@ public class BTCTradeAction {
 			sell_count++;
 			
 			//获取当前卖一价
-			Ticker ticker	= null;
+			Ticker ticker = null;
 			while (ticker == null) {
 				ticker	= btc_api.ApiTicker();
 				ticker.Show();
-				Thread.sleep(1000);
+				Thread.sleep(5000);
 			}
 			double sell_price	= ticker.sell - BTCApi.TRADE_DIFF * sell_count;
 			

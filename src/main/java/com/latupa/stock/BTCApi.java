@@ -18,6 +18,8 @@ import org.apache.commons.logging.LogFactory;
 
 
 class Ticker {
+	public static final Log log = LogFactory.getLog(Ticker.class);
+	
 	double high;
 	double low;
 	double buy;
@@ -25,7 +27,7 @@ class Ticker {
 	double last;
 	double vol;
 	public void Show() {
-		System.out.println("high:" + high + ", low:" + low + ", buy:" + buy + ", sell:" + sell + ", last:" + last + ", vol:" + vol);
+		log.info("high:" + high + ", low:" + low + ", buy:" + buy + ", sell:" + sell + ", last:" + last + ", vol:" + vol);
 	}
 }
 
@@ -260,6 +262,11 @@ public class BTCApi {
 		String url = "https://www.okcoin.com/api/ticker.do";
 		String ret	= sendGet(url, "");
 		
+		if (ret == "") {
+			log.error("call failed!" + url );
+			return null;
+		}
+		
 		try {
 			JSONObject jsonObj = JSONObject.fromObject(ret);
 			if (jsonObj.has("ticker")) {
@@ -298,6 +305,11 @@ public class BTCApi {
 		para.put("symbol", "btc_cny");
 		
 		String ret	= HttpPost(url, para);
+		
+		if (ret == "") {
+			log.error("call failed!" + url );
+			return null;
+		}
 		
 		try {
 			JSONObject jsonObj = JSONObject.fromObject(ret);
@@ -357,6 +369,11 @@ public class BTCApi {
 		
 		String ret	= HttpPost(url, para);
 		
+		if (ret == "") {
+			log.error("call failed!" + url );
+			return false;
+		}
+		
 		try {
 			JSONObject jsonObj = JSONObject.fromObject(ret);
 			if (jsonObj.has("result")) {
@@ -397,6 +414,7 @@ public class BTCApi {
 		String ret	= HttpPost(url, para);
 		
 		if (ret == "") {
+			log.error("call failed!" + url );
 			return null;
 		}
 		
@@ -431,6 +449,11 @@ public class BTCApi {
 		para.put("partner", this.partner);
 		
 		String ret	= HttpPost(url, para);
+		
+		if (ret == "") {
+			log.error("call failed!" + url );
+			return null;
+		}
 		
 		try {
 			JSONObject jsonObj = JSONObject.fromObject(ret);
