@@ -8,12 +8,91 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 /**
+ * 布林线的返回结果
+ * @author latupa
+ *
+ */
+class BollRet {
+        double upper;
+        double mid;
+        double lower;
+        double bbi;
+        
+        public BollRet() {
+        }
+        
+        public BollRet(BollRet bollret) {
+                if (bollret != null) {
+                        this.upper        = bollret.upper;
+                        this.mid        = bollret.mid;
+                        this.lower        = bollret.lower;
+                        this.bbi        = bollret.bbi;
+                }
+        }
+}
+
+/**
+ * macd的返回结果
+ * @author latupa
+ *
+ */
+class MacdRet {
+        double diff;
+        double dea;
+        double macd;
+        double ema13;
+        double ema26;
+        
+        public MacdRet() {
+        }
+        
+        public MacdRet(MacdRet macdret) {
+                if (macdret != null) {
+                        this.diff        = macdret.diff;
+                        this.dea        = macdret.dea;
+                        this.macd        = macdret.macd;
+                        this.ema13        = macdret.ema13;
+                        this.ema26        = macdret.ema26;
+                }
+        }
+}
+
+/**
+ * 均线的通用存储结构
+ * @author latupa
+ *
+ */
+class MaRet {
+        double ma5;
+        double ma10;
+        double ma20;
+        double ma30;
+        double ma60;
+        double ma120;
+        
+        public MaRet() {
+                
+        }
+        
+        public MaRet(MaRet maret) {
+                if (maret != null) {
+                        this.ma5 = maret.ma5;
+                        this.ma10 = maret.ma10;
+                        this.ma20 = maret.ma20;
+                        this.ma30 = maret.ma30;
+                        this.ma60 = maret.ma60;
+                        this.ma120 = maret.ma120;
+                }
+        }
+}
+
+/**
  * BTC价格计算公式
  * @author latupa
  */
 public class BTCFunc {
 	
-	private static final Log log = LogFactory.getLog(StockPriceNew.class);
+	private static final Log log = LogFactory.getLog(BTCFunc.class);
 	
 	/**
 	 * 标准差，为计算布林线使用
