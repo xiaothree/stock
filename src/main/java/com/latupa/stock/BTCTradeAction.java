@@ -64,7 +64,8 @@ public class BTCTradeAction {
 				ticker.Show();
 				Thread.sleep(1000);
 			}
-			double buy_price	= ticker.buy + BTCApi.TRADE_DIFF;
+			double buy_price	= (ticker.buy + ticker.sell) / 2 + BTCApi.TRADE_DIFF;
+			//double buy_price	= ticker.buy + BTCApi.TRADE_DIFF;
 			double buy_quantity	= cny / (buy_price + BTCApi.TRADE_DIFF);
 			
 			//委托买单
@@ -155,7 +156,8 @@ public class BTCTradeAction {
 				ticker.Show();
 				Thread.sleep(5000);
 			}
-			double sell_price	= ticker.sell - BTCApi.TRADE_DIFF * sell_count;
+			double sell_price	= (ticker.sell + ticker.buy) / 2 - BTCApi.TRADE_DIFF * sell_count;
+			//double sell_price	= ticker.sell - BTCApi.TRADE_DIFF * sell_count;
 			
 			//委托卖单
 			log.info("sell price:" + sell_price + ", amount:" + sell_quantity);
