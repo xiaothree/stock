@@ -3,20 +3,14 @@ package com.latupa.stock;
 import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.Random;
 import java.util.TreeMap;
-
-import net.sf.json.JSONObject;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -395,7 +389,7 @@ public class BTCData {
 			System.out.println("time:" + time);
 			record.Show();
 		}
-		System.out.println(b_record_map.size() + " records");
+		log.info(b_record_map.size() + " records");
 	}
 	
 	/**
@@ -422,33 +416,6 @@ public class BTCData {
 		}
 		
 		return;
-	}
-	
-	public double FetchRTWeb() throws IOException {
-		URL url = null;
-		double last = 0;
-		log.info("start fetch web");
-		try {
-			
-            url = new URL("https://www.okcoin.com/market.do");
-            
-    		InputStream in = url.openStream();
-    		BufferedReader bin = new BufferedReader(new InputStreamReader(in, "utf8"));
-    		String s;
-    		log.info("hello");
-    		if ((s = bin.readLine()) != null) {
-    			log.info("readline");
-    			log.info(s);
-    			if (s.equals("最新价格：")) {
-    				System.out.println(s);
-    			}
-    		}
-		} catch (MalformedURLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-		return last;
 	}
 	
 	/**
@@ -497,86 +464,6 @@ public class BTCData {
 		else {
 			return false;
 		}
-	}
-	
-	/**
-	 * 随机生成价格值
-	 * @return
-	 */
-	public double FetchMock() {
-		Random random = new Random();
-		boolean is_positive = random.nextBoolean();
-		double wave	= random.nextDouble() * 50;
-		double next_price;
-		if (this.price_mock == 0) {
-			next_price	= is_positive ? 4000 + wave : 4000 - wave;
-		}
-		else {
-			next_price	= is_positive ? this.price_mock + wave : this.price_mock - wave;
-		}
-		
-		this.price_mock	= next_price;
-		return this.price_mock;
-	}
-
-	/**
-	 * 获取当前数据
-	 * @return
-	 */
-	public double FetchRT() {
-		
-		URL url = null;
-		double last = 0;
-		try {
-			url = new URL(URL_PRICE);
-		
-			InputStream in = url.openStream();
-			BufferedReader bin = new BufferedReader(new InputStreamReader(in, "utf8"));
-			String s = null;
-			if ((s = bin.readLine()) != null) {
-//				System.out.println(s);
-				
-				//触发了接口防抓取
-				if (!s.startsWith("{")) {
-					log.info("fetch failed!");
-					return last;
-				}
-				
-				try {
-					JSONObject jsonObj = JSONObject.fromObject(s);
-					if (jsonObj.has("ticker")) {
-						String s1 = jsonObj.getString("ticker");
-						JSONObject jsonObj1 = JSONObject.fromObject(s1);
-						if (jsonObj1.has("last")) {
-							last = jsonObj1.getDouble("last");
-						}
-						else {
-							log.error("key \"last\" error !" + s1);
-							return last;
-						}
-					}
-					else {
-						log.error("key \"ticker\" error !" + s);
-						return last;
-					}
-						
-					//System.out.println("last:" + last);
-				}
-				catch (Exception e) {
-					log.error("parse json failed! json:" + s, e);
-				}
-			}
-			else {
-				log.error("request return null! url:" + url.toString());
-			}
-			
-			bin.close();
-		}
-		catch (Exception e) {
-			log.error("request failed! url:" + url.toString(), e);
-		}
-		
-		return last;
 	}
 	
 	/**
