@@ -52,9 +52,9 @@ class BTCDSliceRecord extends BTCBasicRecord {
 
 
 class BTCTotalRecord extends BTCBasicRecord {
-	MaRet ma_record;
-	BollRet boll_record;
-	MacdRet macd_record;
+	MaRet ma_record		= new MaRet();
+	BollRet boll_record	= new BollRet();
+	MacdRet macd_record	= new MacdRet();
 	
 	public BTCTotalRecord(BTCBasicRecord record) {
 		this.high	= record.high;
@@ -186,14 +186,18 @@ public class BTCData {
 	}
 	
 	public void BTCDataLoadFromDB() {
-		String sql = "select time + 0 as time, open, close, high, low, ma5, ma10, ma20, ma30, ma60, ma120, upper, mid, lower, bbi, ema13, ema26, diff, dea, macd from  " + BTC_PRICE_TABLE + "__" + this.data_cycle;
+		log.info("load history data from db(" + this.data_cycle + ")");
 		
-		BTCTotalRecord record = new BTCTotalRecord();
+		String sql = "select floor(time + 0) as time, open, close, high, low, ma5, ma10, ma20, ma30, ma60, ma120, upper, mid, lower, bbi, ema13, ema26, diff, dea, macd from  " + BTC_PRICE_TABLE + "__" + this.data_cycle;
+		
 		ResultSet rs = null;
 		rs = dbInst.selectSQL(sql);
 		try {
 			while (rs.next()) {
+				
 				String time	= rs.getString("time");
+				
+				BTCTotalRecord record = new BTCTotalRecord();
 				
 				record.open		= rs.getDouble("open");
 				record.close	= rs.getDouble("close");

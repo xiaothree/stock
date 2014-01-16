@@ -66,8 +66,6 @@ public class BTCDataProcThread extends Thread {
 		
 		long last_stamp_sec = 0;
 		
-		boolean first_proc = true;
-		
 		while (true) {
 			
 			stamp_millis = System.currentTimeMillis();
@@ -85,20 +83,26 @@ public class BTCDataProcThread extends Thread {
 			}
 			
 			for (int data_cycle : this.btc_update_sys.data_map.keySet()) {
-				if (stamp_sec % data_cycle == 0) {
 					
+				if (stamp_sec % data_cycle == 0) {	
 					log.info("trigger cycle " + data_cycle);
 					
 					BTCData btc_data = this.btc_update_sys.data_map.get(data_cycle);
 					BTCDSliceRecord slice_record = btc_data.btc_s_record;
 					
+					int count = this.btc_update_sys.count_num_map.get(data_cycle);
+					this.btc_update_sys.count_num_map.put(data_cycle, ++count);
+					
 					//第一次先不处理，避免数据不完整
-					if (first_proc == true) {
+					if (count == 1) {
+						
+						log.info("skip for first proc cycle " + data_cycle);
 						btc_data.BTCSliceRecordInit();
 						
 						//加载数据库中的历史数据到内存中
+						log.info("load data from db for cycle " + data_cycle);
 						btc_data.BTCDataLoadFromDB();
-						first_proc = false;
+						log.info("load finish");
 						continue;
 					}
 					
@@ -107,8 +111,7 @@ public class BTCDataProcThread extends Thread {
 						log.info("update cycle " + data_cycle);
 						slice_record.Show();
 
-						int curt_k_num = this.btc_update_sys.k_num_map.get(data_cycle);
-						this.btc_update_sys.k_num_map.put(data_cycle, ++curt_k_num);
+						int curt_k_num = btc_data.b_record_map.size();
 						
 						log.info("new k(" + data_cycle + "):" + curt_k_num);
 						
