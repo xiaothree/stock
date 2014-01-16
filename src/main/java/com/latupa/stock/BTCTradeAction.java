@@ -89,6 +89,12 @@ public class BTCTradeAction {
 				
 				count++;
 				if (count == 5) {
+					if (trade_ret != null && trade_ret.status == TradeRet.STATUS.PARTER) {//如果是部分成交，则继续卖出剩余的部分
+						//如果剩余部分小于最小买入份额，就返回
+						if (trade_ret.amount - trade_ret.deal_amount < 0.01) {
+							return trade_ret;
+						}
+					}
 					break;
 				}
 			}
