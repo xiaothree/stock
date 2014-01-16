@@ -63,6 +63,9 @@ class BTCTotalRecord extends BTCBasicRecord {
 		this.close	= record.close;
 	}
 	
+	public BTCTotalRecord() {
+		
+	}
 }
 	
 /**
@@ -121,7 +124,7 @@ public class BTCData {
 	
 	public void DBInit() {
 		String sql = "create table if not exists " + BTC_PRICE_TABLE + "__" + this.data_cycle + 
-				"(`time` DATETIME not null default '0000-00-00 00:00:00', " +
+			"(`time` DATETIME not null default '0000-00-00 00:00:00', " +
 				"`open` double NOT NULL default '0', " +
 				"`close` double NOT NULL default '0', " +
 				"`high` double NOT NULL default '0', " +
@@ -180,6 +183,49 @@ public class BTCData {
 		}
 		
 		return last_record;
+	}
+	
+	public void BTCDataLoadFromDB() {
+		String sql = "select time + 0 as time, open, close, high, low, ma5, ma10, ma20, ma30, ma60, ma120, upper, mid, lower, bbi, ema13, ema26, diff, dea, macd from  " + BTC_PRICE_TABLE + "__" + this.data_cycle;
+		
+		BTCTotalRecord record = new BTCTotalRecord();
+		ResultSet rs = null;
+		rs = dbInst.selectSQL(sql);
+		try {
+			while (rs.next()) {
+				String time	= rs.getString("time");
+				
+				record.open		= rs.getDouble("open");
+				record.close	= rs.getDouble("close");
+				record.high		= rs.getDouble("high");
+				record.low		= rs.getDouble("low");
+				
+				record.ma_record.ma5	= rs.getDouble("ma5");
+				record.ma_record.ma10	= rs.getDouble("ma10");
+				record.ma_record.ma20	= rs.getDouble("ma20");
+				record.ma_record.ma30	= rs.getDouble("ma30");
+				record.ma_record.ma60	= rs.getDouble("ma60");
+				record.ma_record.ma120	= rs.getDouble("ma120");
+				
+				record.boll_record.upper	= rs.getDouble("upper");
+				record.boll_record.mid		= rs.getDouble("mid");
+				record.boll_record.lower	= rs.getDouble("lower");
+				record.boll_record.bbi		= rs.getDouble("bbi");
+
+				record.macd_record.ema13	= rs.getDouble("ema13");
+				record.macd_record.ema26	= rs.getDouble("ema26");
+				record.macd_record.diff		= rs.getDouble("diff");
+				record.macd_record.dea		= rs.getDouble("dea");
+				record.macd_record.macd		= rs.getDouble("macd");
+				
+				this.b_record_map.put(time, record);
+			}
+			
+			rs.close();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	
 	/**
@@ -386,7 +432,7 @@ public class BTCData {
 	public void BTCRecordMemShow() {
 		for (String time : this.b_record_map.keySet().toArray(new String[0])) {
 			BTCBasicRecord record = this.b_record_map.get(time);
-			System.out.println("time:" + time);
+			log.info("time:" + time);
 			record.Show();
 		}
 		log.info(b_record_map.size() + " records");

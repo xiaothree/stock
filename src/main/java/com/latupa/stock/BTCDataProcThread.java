@@ -59,11 +59,14 @@ public class BTCDataProcThread extends Thread {
 	
 	public void run() {
 		
-		long stamp_millis;
-		long stamp_sec;
 		DateFormat df	= new SimpleDateFormat("yyyyMMddHHmmss"); 
 		
+		long stamp_millis;
+		long stamp_sec;
+		
 		long last_stamp_sec = 0;
+		
+		boolean first_proc = true;
 		
 		while (true) {
 			
@@ -85,7 +88,19 @@ public class BTCDataProcThread extends Thread {
 				if (stamp_sec % data_cycle == 0) {
 					
 					log.info("trigger cycle " + data_cycle);
-					BTCDSliceRecord slice_record = this.btc_update_sys.data_map.get(data_cycle).btc_s_record;
+					
+					BTCData btc_data = this.btc_update_sys.data_map.get(data_cycle);
+					BTCDSliceRecord slice_record = btc_data.btc_s_record;
+					
+					//第一次先不处理，避免数据不完整
+					if (first_proc == true) {
+						btc_data.BTCSliceRecordInit();
+						
+						//加载数据库中的历史数据到内存中
+						btc_data.BTCDataLoadFromDB();
+						first_proc = false;
+						continue;
+					}
 					
 					if (slice_record.init_flag == false) {
 					
