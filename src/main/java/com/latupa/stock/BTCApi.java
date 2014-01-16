@@ -92,6 +92,8 @@ public class BTCApi {
 	
 	//交易委托的差价
 	public static final int TRADE_DIFF = 3;
+	
+	public static final int ERROR_CODE_10009 = 10009; //订单不存在
 
 	public BTCApi() {
 		ReadInfo();
@@ -382,7 +384,13 @@ public class BTCApi {
 					return true;
 				}
 				else {
-					log.error("parse json failed! json:" + ret);
+					int error_code = jsonObj.getInt("errorCode");
+					if (error_code == ERROR_CODE_10009) {//如果是订单不存在，说明已经委托成功了，不允许撤单
+						return true;
+					}
+					else {
+						log.error("parse json failed! json:" + ret);
+					}
 				}
 			}
 			else {
