@@ -6,9 +6,12 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.DateFormat;
 import java.text.DecimalFormat;
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.TreeMap;
 
@@ -185,6 +188,30 @@ public class BTCData {
 		return last_record;
 	}
 	
+	/**
+	 * 清理之前内存中的历史数据
+	 * @param pre_days
+	 */
+	public void BTCDataMemoryClean(int pre_days) {
+		
+		DateFormat df	= new SimpleDateFormat("yyyyMMddHHmmss"); 
+		
+		long stamp_millis = System.currentTimeMillis();
+		long stamp_sec = stamp_millis / 1000;
+		
+		long pre_stamp_sec = stamp_sec - 24 * 60 * 60 * pre_days;
+		
+		Date cur_date = new Date(pre_stamp_sec * 1000);
+		String sDateTime = df.format(cur_date); 
+		
+		for (String time : this.b_record_map.headMap(sDateTime, true).keySet().toArray(new String[0])) {
+			this.b_record_map.remove(time);
+		}
+	}
+	
+	/**
+	 * 从数据库加载历史数据
+	 */
 	public void BTCDataLoadFromDB() {
 		log.info("load history data from db(" + this.data_cycle + ")");
 		
