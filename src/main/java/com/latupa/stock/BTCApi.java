@@ -20,6 +20,8 @@ import org.apache.commons.logging.LogFactory;
 
 
 class Ticker {
+	public static final Log log = LogFactory.getLog(Ticker.class);
+	
 	double high;
 	double low;
 	double buy;
@@ -27,7 +29,7 @@ class Ticker {
 	double last;
 	double vol;
 	public void Show() {
-		System.out.println("high:" + high + ", low:" + low + ", buy:" + buy + ", sell:" + sell + ", last:" + last + ", vol:" + vol);
+		log.info("high:" + high + ", low:" + low + ", buy:" + buy + ", sell:" + sell + ", last:" + last + ", vol:" + vol);
 	}
 }
 
@@ -92,6 +94,8 @@ public class BTCApi {
 	
 	//交易委托的差价
 	public static final int TRADE_DIFF = 3;
+	
+	public static final int ERROR_CODE_10009 = 10009; //订单不存在
 
 	public BTCApi() {
 		ReadInfo();
@@ -369,6 +373,11 @@ public class BTCApi {
 		String url = "https://www.okcoin.com/api/ticker.do";
 		String ret	= sendGet(url, "");
 		
+		if (ret == "") {
+			log.error("call failed!" + url );
+			return null;
+		}
+		
 		try {
 			JSONObject jsonObj = JSONObject.fromObject(ret);
 			if (jsonObj.has("ticker")) {
@@ -407,6 +416,11 @@ public class BTCApi {
 		para.put("symbol", "btc_cny");
 		
 		String ret	= HttpPost(url, para);
+		
+		if (ret == "") {
+			log.error("call failed!" + url);
+			return null;
+		}
 		
 		try {
 			JSONObject jsonObj = JSONObject.fromObject(ret);
@@ -466,6 +480,11 @@ public class BTCApi {
 		
 		String ret	= HttpPost(url, para);
 		
+		if (ret == "") {
+			log.error("call failed!" + url );
+			return false;
+		}
+		
 		try {
 			JSONObject jsonObj = JSONObject.fromObject(ret);
 			if (jsonObj.has("result")) {
@@ -474,7 +493,13 @@ public class BTCApi {
 					return true;
 				}
 				else {
-					log.error("parse json failed! json:" + ret);
+					int error_code = jsonObj.getInt("errorCode");
+					if (error_code == ERROR_CODE_10009) {//如果是订单不存在，说明已经委托成功了，不允许撤单
+						return true;
+					}
+					else {
+						log.error("parse json failed! json:" + ret);
+					}
 				}
 			}
 			else {
@@ -506,6 +531,7 @@ public class BTCApi {
 		String ret	= HttpPost(url, para);
 		
 		if (ret == "") {
+			log.error("call failed!" + url );
 			return null;
 		}
 		
@@ -540,6 +566,11 @@ public class BTCApi {
 		para.put("partner", this.partner);
 		
 		String ret	= HttpPost(url, para);
+		
+		if (ret == "") {
+			log.error("call failed!" + url );
+			return null;
+		}
 		
 		try {
 			JSONObject jsonObj = JSONObject.fromObject(ret);

@@ -64,28 +64,52 @@ public class BTCTradeAction {
 				ticker.Show();
 				Thread.sleep(1000);
 			}
-			double buy_price	= ticker.buy + BTCApi.TRADE_DIFF;
+			double buy_price	= (ticker.buy + ticker.sell) / 2 + BTCApi.TRADE_DIFF;
+			//double buy_price	= ticker.buy + BTCApi.TRADE_DIFF;
 			double buy_quantity	= cny / (buy_price + BTCApi.TRADE_DIFF);
 			
 			//委托买单
 			log.info("buy total cny:" + cny + ", price:" + buy_price + ", amount:" + buy_quantity);
 			String order_id	= btc_api.ApiTrade("buy", buy_price, buy_quantity);
 			log.info("order_id:" + order_id);
+
+			int count = 0;
+			while (order_id == null) {
+				Thread.sleep(5000);
+				
+				log.info("buy total cny:" + cny + ", price:" + buy_price + ", amount:" + buy_quantity);
+				order_id = btc_api.ApiTrade("buy", buy_price, buy_quantity);
+				log.info("order_id:" + order_id);
+				
+				count++;
+				if (count == 5) {
+					log.error("trade for buy failed!");
+					System.exit(0);
+				}
+			}
 			
 			//获取委托的结果
-			int count = 0;
+			count = 0;
 			while (true) {
 				
 				Thread.sleep(5000);
 				
 				TradeRet trade_ret	= btc_api.ApiGetOrder(order_id);
-				trade_ret.Show();
-				if (trade_ret.status == TradeRet.STATUS.TOTAL) {
-					return trade_ret;
+				if (trade_ret != null) {
+					trade_ret.Show();
+					if (trade_ret.status == TradeRet.STATUS.TOTAL) {
+						return trade_ret;
+					}
 				}
 				
 				count++;
 				if (count == 5) {
+					if (trade_ret != null && trade_ret.status == TradeRet.STATUS.PARTER) {//如果是部分成交，则继续卖出剩余的部分
+						//如果剩余部分小于最小买入份额，就返回
+						if (trade_ret.amount - trade_ret.deal_amount < 0.01) {
+							return trade_ret;
+						}
+					}
 					break;
 				}
 			}
@@ -147,37 +171,51 @@ public class BTCTradeAction {
 			sell_count++;
 			
 			//获取当前卖一价
-			Ticker ticker	= null;
+			Ticker ticker = null;
 			while (ticker == null) {
 				ticker	= btc_api.ApiTicker();
 				ticker.Show();
-				Thread.sleep(1000);
+				Thread.sleep(5000);
 			}
-			double sell_price	= ticker.sell - BTCApi.TRADE_DIFF * sell_count;
+			double sell_price	= (ticker.sell + ticker.buy) / 2 - BTCApi.TRADE_DIFF * sell_count;
+			//double sell_price	= ticker.sell - BTCApi.TRADE_DIFF * sell_count;
 			
 			//委托卖单
 			log.info("sell price:" + sell_price + ", amount:" + sell_quantity);
 			String order_id	= btc_api.ApiTrade("sell", sell_price, sell_quantity);
 			log.info("order_id:" + order_id);
-			if (order_id == null) {
-				log.error("order is null");
-				System.exit(0);
+			int count = 0;
+			while (order_id == null) {
+				Thread.sleep(5000);
+				
+				log.info("sell price:" + sell_price + ", amount:" + sell_quantity);
+				order_id = btc_api.ApiTrade("sell", sell_price, sell_quantity);
+				log.info("order_id:" + order_id);
+				
+				count++;
+				if (count == 5) {
+					log.error("trade for sell failed!");
+					System.exit(0);
+				}
 			}
 			
 			//获取委托的结果
-			int count = 0;
+			count = 0;
 			while (true) {
-				count++;
-				TradeRet trade_ret	= btc_api.ApiGetOrder(order_id);
-				trade_ret.Show();
-				if (trade_ret.status == TradeRet.STATUS.TOTAL) {
-					return trade_ret;
-				}
 				
 				Thread.sleep(5000);
 				
+				TradeRet trade_ret	= btc_api.ApiGetOrder(order_id);
+				if (trade_ret != null) {
+					trade_ret.Show();
+					if (trade_ret.status == TradeRet.STATUS.TOTAL) {
+						return trade_ret;
+					}
+				}
+								
+				count++;
 				if (count == 5) {
-					if (trade_ret.status == TradeRet.STATUS.PARTER) {//如果是部分成交，则继续卖出剩余的部分
+					if (trade_ret != null && trade_ret.status == TradeRet.STATUS.PARTER) {//如果是部分成交，则继续卖出剩余的部分
 						sell_quantity -= trade_ret.deal_amount;
 					}
 					break;
