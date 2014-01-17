@@ -84,7 +84,7 @@ public class BTCDataProcThread extends Thread {
 			
 			for (int data_cycle : this.btc_update_sys.data_map.keySet()) {
 					
-				if (stamp_sec % 24 * 60 * 60 == 0) {	//每天清理一次内存中的历史数据
+				if (stamp_sec % (24 * 60 * 60) == 0) {	//每天清理一次内存中的历史数据
 					log.info("clean cycle " + data_cycle);
 					
 					BTCData btc_data = this.btc_update_sys.data_map.get(data_cycle);
