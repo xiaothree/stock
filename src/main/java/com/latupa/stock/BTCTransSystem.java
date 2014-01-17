@@ -1,7 +1,10 @@
 package com.latupa.stock;
 
 import java.io.File;
+import java.text.DateFormat;
 import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -32,10 +35,7 @@ public class BTCTransSystem {
 	public boolean trade_mode;
 	
 	//K线周期(s)
-	public int cycle_data;	
-	
-	//数据采集周期(s)
-	public int cycle_fetch;
+	public int data_cycle;	
 	
 	//当前BTC份数
 	public double btc_curt_quantity;
@@ -72,7 +72,7 @@ public class BTCTransSystem {
 	public int btc_k_cycles = 0;
 	
 	//BTC数据
-	public BTCData btc_data = new BTCData();
+	public BTCData btc_data;
 	
 	//BTC计算公式
 	public BTCFunc btc_func = new BTCFunc();
@@ -87,12 +87,13 @@ public class BTCTransSystem {
 	public BTCTradeAction btc_trade_action = new BTCTradeAction();
 	
 	//交易记录
-	public BTCTransRecord btc_trans_rec = new BTCTransRecord(this.btc_data.dbInst);
+	public BTCTransRecord btc_trans_rec;
 	
-	public BTCTransSystem(int cycle_data, int cycle_fetch, MODE mode) {
-		this.cycle_data		= cycle_data;
-		this.cycle_fetch	= cycle_fetch;
-		this.mode			= mode;
+	public BTCTransSystem(int data_cycle, MODE mode) {
+		this.data_cycle	= data_cycle;
+		this.mode		= mode;
+		this.btc_data	= new BTCData(this.data_cycle);
+		this.btc_trans_rec	= new BTCTransRecord(this.btc_data.dbInst);
 		
 		this.trade_mode	= false;
 		this.btc_init_amount	= this.BTC_INIT_AMOUNT;
@@ -344,25 +345,138 @@ public class BTCTransSystem {
 		}
 	}
 	
-	public void Route() {
+	/**
+	 * 处理买卖相关
+	 * @param sDateTime
+	 */
+	private void ProcTrans(String sDateTime) {
 		
-		//实盘
-		if (this.mode == MODE.ACTUAL) {
-			BTCUpdateThread btc_update_thread = new BTCUpdateThread(this);
-			btc_update_thread.start();
+		this.btc_trans_stra.InitPoint();
+		this.btc_trans_stra.CheckPoint(this.btc_data);
+		
+		BTCTotalRecord record	= this.btc_data.BTCRecordOptGetByCycle(0);
+		DecimalFormat df1 = new DecimalFormat("#0.00");
+		
+		//如果还未入场，则判断是否要入场
+		if (this.btc_trans_stra.curt_status == BTCTransStrategy2.STATUS.READY) {
+			
+			if (this.btc_trans_stra.IsBuy(sDateTime) == true) {
+				this.BuyAction(sDateTime, record.close);
+			}
+		}
+		//如果已入场，则判断是否要出场
+		else if (this.btc_trans_stra.curt_status != BTCTransStrategy2.STATUS.READY) {
+			
+			//判断是否要出场
+			int sell_position = this.btc_trans_stra.IsSell(sDateTime);
+			
+			//需要出场
+			if (sell_position > 0) {
+				
+				this.btc_trans_stra.CleanStatus();
+				this.SellAction(sDateTime, record.close, sell_position);
+			}
 		}
 		
-		BTCProcThread btc_proc_thread = new BTCProcThread(this);
-		btc_proc_thread.start();
+		//初始化记录每年信息的起始年
+		if (this.btc_year_time == null) {
+			this.btc_year_time = sDateTime.substring(0, 4);
+			this.btc_year_price_init = record.close;
+		}
+		//记录每年年终信息
+		else if (!sDateTime.substring(0, 4).equals(this.btc_year_time)) {
+			log.info("TransProcess: year:" + this.btc_year_time +
+					", price init:" + df1.format(this.btc_year_price_init) +
+					", price last:" + df1.format(record.close) + "(" + df1.format((record.close - this.btc_year_price_init) / this.btc_year_price_init * 100) + "%)" +
+					", amount init:" + df1.format(this.btc_year_amount_init) +
+					", amount last:" + df1.format(this.btc_curt_amount) + "(" + df1.format((this.btc_curt_amount - this.btc_year_amount_init) / this.btc_year_amount_init * 100) + "%)");
+			
+			this.btc_year_time = sDateTime.substring(0, 4);
+			this.btc_year_amount_init	= this.btc_curt_amount;
+			this.btc_year_price_init	= record.close;
+		}
 	}
+	
+	public void Route() {
+		
+		//复盘
+		if (this.mode == MODE.REVIEW) {
+			log.info("BTCProcThread start by mock src");
+			
+			//从数据库mock数值的初始化
+			this.btc_data.UpdateMockInit();
+			
+			String sDateTime	= null;
+			
+			//每次mock一条
+			while (this.btc_data.UpdateMockGet()) {
+				sDateTime	= String.valueOf((int)this.btc_data.btc_s_record.open);
+				ProcTrans(sDateTime);
+			}
+		}
+		else {
+			log.info("BTCProcThread start online");
+			
+			long stamp_millis;
+			long stamp_sec;
+			DateFormat df	= new SimpleDateFormat("yyyyMMddHHmmss"); 
+			
+			long last_stamp_sec = 0;
+			
+			while (true) {
+				
+				stamp_millis = System.currentTimeMillis();
+				stamp_sec = stamp_millis / 1000;
+				
+				//防止同一秒钟内处理多次
+				if (stamp_sec == last_stamp_sec) {
+					try {
+						Thread.sleep(200);
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					continue;
+				}
 
+				if (stamp_sec % this.data_cycle == 0) {
+					
+					try {
+						this.TradeModeSwitch();
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						log.error("mode switch failed!", e);
+						System.exit(0);
+					}
+					
+					Date cur_date = new Date(stamp_millis);
+					String sDateTime = df.format(cur_date); 
+					
+					this.btc_data.BTCDataLoadFromDB(20);
+					if (this.btc_data.b_record_map.containsKey(sDateTime)) {
+						ProcTrans(sDateTime);
+					}
+					this.btc_data.b_record_map.clear();
+				}
+				
+				last_stamp_sec = stamp_sec;
+				
+				try {
+					Thread.sleep(200);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		}
+	}
 	
 	/**
 	 * @param args
 	 */
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
-		BTCTransSystem btc_ts = new BTCTransSystem(300, 20, MODE.ACTUAL);
+		BTCTransSystem btc_ts = new BTCTransSystem(300, MODE.ACTUAL);
 		btc_ts.Route();
 	}
 }

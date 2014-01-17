@@ -211,11 +211,15 @@ public class BTCData {
 	
 	/**
 	 * 从数据库加载历史数据
+	 * @param last_days 最近天数的数据，如果为0，则表示加载所有
 	 */
-	public void BTCDataLoadFromDB() {
-		log.info("load history data from db(" + this.data_cycle + ")");
+	public void BTCDataLoadFromDB(int last_days) {
+		log.info("load history data from db(" + this.data_cycle + ") for " + last_days + " days");
 		
 		String sql = "select floor(time + 0) as time, open, close, high, low, ma5, ma10, ma20, ma30, ma60, ma120, upper, mid, lower, bbi, ema13, ema26, diff, dea, macd from  " + BTC_PRICE_TABLE + "__" + this.data_cycle;
+		if (last_days != 0) {
+			sql += " order by time desc limit " + last_days;
+		}
 		
 		ResultSet rs = null;
 		rs = dbInst.selectSQL(sql);

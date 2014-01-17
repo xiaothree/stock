@@ -108,7 +108,7 @@ public class BTCDataProcThread extends Thread {
 						
 						//加载数据库中的历史数据到内存中
 						log.info("load data from db for cycle " + data_cycle);
-						btc_data.BTCDataLoadFromDB();
+						btc_data.BTCDataLoadFromDB(0);
 						log.info("load finish");
 						continue;
 					}

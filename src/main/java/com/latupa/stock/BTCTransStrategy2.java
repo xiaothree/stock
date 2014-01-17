@@ -309,20 +309,7 @@ public static final Log log = LogFactory.getLog(BTCTransStrategy1.class);
 		this.status_down_macd_count	= 0;
 	}
 
-	@
-	
-	
-	Override
 	public void InitPoint() {
-		
-		
-		
-		
-		
-		
-		
-		
-		
 		// TODO Auto-generated method stub
 		//二次金叉
 		is_double_gold_cross	= false;
