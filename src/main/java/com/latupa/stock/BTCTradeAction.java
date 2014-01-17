@@ -73,8 +73,23 @@ public class BTCTradeAction {
 			String order_id	= btc_api.ApiTrade("buy", buy_price, buy_quantity);
 			log.info("order_id:" + order_id);
 			
-			//获取委托的结果
 			int count = 0;
+			while (order_id == null) {
+				Thread.sleep(5000);
+				
+				log.info("buy total cny:" + cny + ", price:" + buy_price + ", amount:" + buy_quantity);
+				order_id = btc_api.ApiTrade("buy", buy_price, buy_quantity);
+				log.info("order_id:" + order_id);
+				
+				count++;
+				if (count == 5) {
+					log.error("trade for buy failed!");
+					System.exit(0);
+				}
+			}
+			
+			//获取委托的结果
+			count = 0;
 			while (true) {
 				
 				Thread.sleep(5000);
@@ -169,13 +184,23 @@ public class BTCTradeAction {
 			log.info("sell price:" + sell_price + ", amount:" + sell_quantity);
 			String order_id	= btc_api.ApiTrade("sell", sell_price, sell_quantity);
 			log.info("order_id:" + order_id);
-			if (order_id == null) {
-				log.error("order is null");
-				System.exit(0);
+			int count = 0;
+			while (order_id == null) {
+				Thread.sleep(5000);
+				
+				log.info("sell price:" + sell_price + ", amount:" + sell_quantity);
+				order_id = btc_api.ApiTrade("sell", sell_price, sell_quantity);
+				log.info("order_id:" + order_id);
+				
+				count++;
+				if (count == 5) {
+					log.error("trade for sell failed!");
+					System.exit(0);
+				}
 			}
 			
 			//获取委托的结果
-			int count = 0;
+			count = 0;
 			while (true) {
 				
 				Thread.sleep(5000);
