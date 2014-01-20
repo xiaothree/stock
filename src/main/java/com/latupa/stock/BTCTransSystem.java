@@ -31,6 +31,11 @@ public class BTCTransSystem {
 	};
 	public MODE mode;
 	
+	public enum OPT {
+		BUY,
+		SELL;
+	};
+	
 	//交易模式：true->真实交易；false->模拟交易
 	public boolean trade_mode;
 	
@@ -62,6 +67,11 @@ public class BTCTransSystem {
 	public double btc_accumulate_fee_cost;
 	
 	public String btc_time_buyin;
+	
+	//记录每天的收益
+	public String btc_day_time;
+	public double btc_day_amount_init;
+	public double btc_day_price_init;
 	
 	//记录每年的收益
 	public String btc_year_time;
@@ -115,6 +125,10 @@ public class BTCTransSystem {
 		this.btc_trans_count	= 0;
 		this.btc_fee_cost		= 0;
 		this.btc_accumulate_fee_cost	= 0;
+		
+		this.btc_day_time 			= null;
+		this.btc_day_amount_init 	= this.BTC_INIT_AMOUNT;
+		this.btc_day_price_init		= 0;
 		
 		this.btc_year_time	= null;
 		this.btc_year_amount_init	= this.BTC_INIT_AMOUNT;
@@ -355,13 +369,16 @@ public class BTCTransSystem {
 		this.btc_trans_stra.CheckPoint(this.btc_data);
 		
 		BTCTotalRecord record	= this.btc_data.BTCRecordOptGetByCycle(0);
-		DecimalFormat df1 = new DecimalFormat("#0.00");
+		
 		
 		//如果还未入场，则判断是否要入场
 		if (this.btc_trans_stra.curt_status == BTCTransStrategy2.STATUS.READY) {
 			
 			if (this.btc_trans_stra.IsBuy(sDateTime) == true) {
 				this.BuyAction(sDateTime, record.close);
+				
+				RecordForDay(sDateTime, record, OPT.BUY);
+				RecordForYear(sDateTime, record, OPT.BUY);
 			}
 		}
 		//如果已入场，则判断是否要出场
@@ -372,19 +389,62 @@ public class BTCTransSystem {
 			
 			//需要出场
 			if (sell_position > 0) {
-				
-				this.btc_trans_stra.CleanStatus();
 				this.SellAction(sDateTime, record.close, sell_position);
+				this.btc_trans_stra.CleanStatus();
+				
+				RecordForDay(sDateTime, record, OPT.SELL);
+				RecordForYear(sDateTime, record, OPT.SELL);
 			}
 		}
+	}
+	
+	/**
+	 * 记录日收益
+	 * @param sDateTime
+	 * @param record
+	 */
+	public void RecordForDay(String sDateTime, BTCTotalRecord record, OPT opt) {
+		
+		DecimalFormat df1 = new DecimalFormat("#0.00");
+		
+		String curt_day = sDateTime.substring(0, 8);
+		
+		//初始化记录每天的起始信息
+		if (this.btc_day_time == null && opt == OPT.BUY) {
+			this.btc_day_time = curt_day;
+			this.btc_day_price_init = record.close;
+		}
+		//记录每天收益信息
+		else if (!curt_day.equals(this.btc_day_time) && opt == OPT.SELL) {
+			log.info("TransProcess[DAY]: day:" + this.btc_day_time +
+					", price init:" + df1.format(this.btc_day_price_init) +
+					", price last:" + df1.format(record.close) + "(" + df1.format((record.close - this.btc_day_price_init) / this.btc_day_price_init * 100) + "%)" +
+					", amount init:" + df1.format(this.btc_day_amount_init) +
+					", amount last:" + df1.format(this.btc_curt_amount) + "(" + df1.format((this.btc_curt_amount - this.btc_day_amount_init) / this.btc_day_amount_init * 100) + "%)");
+			
+			this.btc_day_time = curt_day;
+			this.btc_day_amount_init	= this.btc_curt_amount;
+			this.btc_day_price_init	= record.close;
+		}
+	}
+		
+		
+	/**
+	 * 记录年收益
+	 * @param sDateTime
+	 * @param record
+	 */
+	public void RecordForYear(String sDateTime, BTCTotalRecord record, OPT opt) {
+		
+		DecimalFormat df1 = new DecimalFormat("#0.00");
 		
 		//初始化记录每年信息的起始年
-		if (this.btc_year_time == null) {
+		if (this.btc_year_time == null && opt == OPT.BUY) {
 			this.btc_year_time = sDateTime.substring(0, 4);
 			this.btc_year_price_init = record.close;
 		}
 		//记录每年年终信息
-		else if (!sDateTime.substring(0, 4).equals(this.btc_year_time)) {
+		else if (!sDateTime.substring(0, 4).equals(this.btc_year_time) && opt == OPT.SELL) {
 			log.info("TransProcess: year:" + this.btc_year_time +
 					", price init:" + df1.format(this.btc_year_price_init) +
 					", price last:" + df1.format(record.close) + "(" + df1.format((record.close - this.btc_year_price_init) / this.btc_year_price_init * 100) + "%)" +
@@ -401,16 +461,18 @@ public class BTCTransSystem {
 		
 		//复盘
 		if (this.mode == MODE.REVIEW) {
-			log.info("BTCProcThread start by mock src");
+			log.info("start by mock src");
 			
 			//从数据库mock数值的初始化
-			this.btc_data.UpdateMockInit();
-			
-			String sDateTime	= null;
+			this.btc_data.BTCMockInit();
 			
 			//每次mock一条
-			while (this.btc_data.UpdateMockGet()) {
-				sDateTime	= String.valueOf((int)this.btc_data.btc_s_record.open);
+			while (this.btc_data.btc_mock_it.hasNext()) {
+				String sDateTime		= this.btc_data.btc_mock_it.next();
+				BTCTotalRecord record	= this.btc_data.btc_mock_map.get(sDateTime);
+				this.btc_data.b_record_map.put(sDateTime, record);
+				
+				log.info("proc " + sDateTime);
 				ProcTrans(sDateTime);
 			}
 		}
@@ -454,6 +516,7 @@ public class BTCTransSystem {
 					
 					this.btc_data.BTCDataLoadFromDB(20);
 					if (this.btc_data.b_record_map.containsKey(sDateTime)) {
+						log.info("proc " + sDateTime);
 						ProcTrans(sDateTime);
 					}
 					this.btc_data.b_record_map.clear();
@@ -476,7 +539,7 @@ public class BTCTransSystem {
 	 */
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
-		BTCTransSystem btc_ts = new BTCTransSystem(300, MODE.ACTUAL);
+		BTCTransSystem btc_ts = new BTCTransSystem(600, MODE.REVIEW);
 		btc_ts.Route();
 	}
 }

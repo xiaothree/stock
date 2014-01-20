@@ -109,6 +109,10 @@ public class BTCData {
 	public TreeMap<Integer, Double> update_mock_map = new TreeMap<Integer, Double>();
 	public Iterator<Integer> update_mock_it;
 	
+	//用于记录从数据库BTC mock的数据，<String, BTCTotalRecord>
+	public TreeMap<String, BTCTotalRecord> btc_mock_map = new TreeMap<String, BTCTotalRecord>();
+	public Iterator<String> btc_mock_it;
+	
 	public BTCData(int data_cycle) {
 		this.data_cycle = data_cycle;
 		this.dbInst	= ConnectDB();
@@ -544,6 +548,76 @@ public class BTCData {
 		}
 		else {
 			return false;
+		}
+	}
+	
+	/**
+	 * 从数据库获取BTC的Mock数据
+	 */
+	public void BTCMockInit() {
+		
+		String sql = "select floor(time + 0) as time, open, close, high, low, ma5, ma10, ma20, ma30, ma60, ma120, upper, mid, lower, bbi, ema13, ema26, diff, dea, macd from  " + BTC_PRICE_TABLE + "__" + this.data_cycle + " order by time asc";
+		
+		ResultSet rs = null;
+		rs = dbInst.selectSQL(sql);
+		try {
+			while (rs.next()) {
+				
+				String time	= rs.getString("time");
+				
+				BTCTotalRecord record = new BTCTotalRecord();
+				
+				record.open		= rs.getDouble("open");
+				record.close	= rs.getDouble("close");
+				record.high		= rs.getDouble("high");
+				record.low		= rs.getDouble("low");
+				
+				record.ma_record.ma5	= rs.getDouble("ma5");
+				record.ma_record.ma10	= rs.getDouble("ma10");
+				record.ma_record.ma20	= rs.getDouble("ma20");
+				record.ma_record.ma30	= rs.getDouble("ma30");
+				record.ma_record.ma60	= rs.getDouble("ma60");
+				record.ma_record.ma120	= rs.getDouble("ma120");
+				
+				record.boll_record.upper	= rs.getDouble("upper");
+				record.boll_record.mid		= rs.getDouble("mid");
+				record.boll_record.lower	= rs.getDouble("lower");
+				record.boll_record.bbi		= rs.getDouble("bbi");
+
+				record.macd_record.ema13	= rs.getDouble("ema13");
+				record.macd_record.ema26	= rs.getDouble("ema26");
+				record.macd_record.diff		= rs.getDouble("diff");
+				record.macd_record.dea		= rs.getDouble("dea");
+				record.macd_record.macd		= rs.getDouble("macd");
+				
+				this.btc_mock_map.put(time, record);
+			}
+			
+			rs.close();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		this.btc_mock_it = this.btc_mock_map.keySet().iterator();
+	}
+	
+	
+	/**
+	 * 基于数据库获取的BTC mock数据，每次更新一条
+	 * @return
+	 */
+	public BTCTotalRecord BTCMockGet() {
+		if (this.btc_mock_it.hasNext()) {
+			String time	= this.btc_mock_it.next();
+			BTCTotalRecord record = this.btc_mock_map.get(time);
+			
+			log.debug("mock from db, time:" + time);
+			
+			return record;
+		}
+		else {
+			return null;
 		}
 	}
 	
