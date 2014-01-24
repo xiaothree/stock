@@ -1,6 +1,7 @@
 package com.latupa.stock;
 
-import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.text.DateFormat;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
@@ -292,7 +293,8 @@ public class BTCTransSystem {
 		//只有实盘才涉及是否进行真实交易
 		if (this.mode == MODE.ACTUAL) {
 			
-			if (new File(Trans_FILE_DIR + Trans_FILE).exists()) {
+			InputStream fis	= BTCApi.class.getClassLoader().getResourceAsStream(Trans_FILE);
+			if (fis != null) {
 				//进入真实交易模式
 				if (this.trade_mode == true) {//已经是真实交易
 					return;
@@ -355,6 +357,13 @@ public class BTCTransSystem {
 						System.exit(0);
 					}
 				}
+			}
+			
+			try {
+				fis.close();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
 		}
 	}

@@ -1,7 +1,6 @@
 package com.latupa.stock;
 
 import java.io.BufferedReader;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -610,8 +609,9 @@ public class BTCApi {
 	 * 读取配置交易配置信息
 	 */
 	public void ReadInfo() {
+		
 		try {
-			FileInputStream fis		= new FileInputStream(ACTION_FILE_DIR + action_file);
+			InputStream fis			= BTCApi.class.getClassLoader().getResourceAsStream(action_file);
 	        InputStreamReader isr	= new InputStreamReader(fis, "utf8");
 	        BufferedReader br		= new BufferedReader(isr);
 	        
@@ -630,12 +630,12 @@ public class BTCApi {
 	        	return;
 	        }
 	        else {
-	        	log.error("read " + ACTION_FILE_DIR + action_file + " is null!");
+	        	log.error("read " + action_file + " is null!");
 	        	return;
 	        }
 		}
 		catch (Exception e) {
-			log.error("read " + ACTION_FILE_DIR + action_file + " failed!", e);
+			log.error("read " + action_file + " failed!", e);
 			return;
 		}
 	}
