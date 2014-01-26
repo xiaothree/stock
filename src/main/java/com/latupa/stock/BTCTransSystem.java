@@ -1,5 +1,6 @@
 package com.latupa.stock;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.DateFormat;
@@ -293,8 +294,7 @@ public class BTCTransSystem {
 		//只有实盘才涉及是否进行真实交易
 		if (this.mode == MODE.ACTUAL) {
 			
-			InputStream fis	= BTCApi.class.getClassLoader().getResourceAsStream(TRANS_FILE_DIR + TRANS_FILE);
-			if (fis != null) {
+			if (new File(TRANS_FILE_DIR + TRANS_FILE).exists()) {
 				//进入真实交易模式
 				if (this.trade_mode == true) {//已经是真实交易
 					return;
@@ -357,13 +357,6 @@ public class BTCTransSystem {
 						System.exit(0);
 					}
 				}
-			}
-			
-			try {
-				fis.close();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
 			}
 		}
 	}
@@ -510,6 +503,14 @@ public class BTCTransSystem {
 
 				if (stamp_sec % this.data_cycle == 0) {
 					
+					//确保update thread 已经更新
+					try {
+						Thread.sleep(1000);
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					
 					try {
 						this.TradeModeSwitch();
 					} catch (InterruptedException e) {
@@ -546,7 +547,7 @@ public class BTCTransSystem {
 	 */
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
-		BTCTransSystem btc_ts = new BTCTransSystem(600, MODE.ACTUAL);
+		BTCTransSystem btc_ts = new BTCTransSystem(300, MODE.ACTUAL);
 		btc_ts.Route();
 	}
 }
