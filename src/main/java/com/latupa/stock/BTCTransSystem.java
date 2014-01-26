@@ -424,13 +424,13 @@ public class BTCTransSystem {
 			this.btc_day_price_init = record.close;
 		}
 		//记录每天收益信息
-		else if (!curt_day.equals(this.btc_day_time) && opt == OPT.SELL) {
+		else if (!curt_day.equals(this.btc_day_time.substring(0, 8)) && opt == OPT.SELL) {
 			log.info("TransProcess[DAY]: day:" + this.btc_day_time.substring(0, 8) +
 					", time:" + this.btc_day_time + "->" + sDateTime +
 					", price:" + df1.format(this.btc_day_price_init) + "->" + df1.format(record.close) + "(" + df1.format((record.close - this.btc_day_price_init) / this.btc_day_price_init * 100) + "%)" +
 					", amount:" + df1.format(this.btc_day_amount_init) + "->" + df1.format(this.btc_curt_amount) + "(" + df1.format((this.btc_curt_amount - this.btc_day_amount_init) / this.btc_day_amount_init * 100) + "%)");
 			
-			this.btc_day_time = curt_day;
+			this.btc_day_time = sDateTime;
 			this.btc_day_amount_init	= this.btc_curt_amount;
 			this.btc_day_price_init	= record.close;
 		}
@@ -452,13 +452,13 @@ public class BTCTransSystem {
 			this.btc_year_price_init = record.close;
 		}
 		//记录每年年终信息
-		else if (!sDateTime.substring(0, 4).equals(this.btc_year_time) && opt == OPT.SELL) {
+		else if (!sDateTime.substring(0, 4).equals(this.btc_year_time.substring(0, 4)) && opt == OPT.SELL) {
 			log.info("TransProcess: year:" + this.btc_year_time.substring(0, 4) +
 					", time:" + this.btc_year_time + "->" + sDateTime + 
 					", price:" + df1.format(this.btc_year_price_init) + "->" + df1.format(record.close) + "(" + df1.format((record.close - this.btc_year_price_init) / this.btc_year_price_init * 100) + "%)" +
 					", amount:" + df1.format(this.btc_year_amount_init) + "->" + df1.format(this.btc_curt_amount) + "(" + df1.format((this.btc_curt_amount - this.btc_year_amount_init) / this.btc_year_amount_init * 100) + "%)");
 			
-			this.btc_year_time = sDateTime.substring(0, 4);
+			this.btc_year_time = sDateTime;
 			this.btc_year_amount_init	= this.btc_curt_amount;
 			this.btc_year_price_init	= record.close;
 		}
@@ -546,7 +546,7 @@ public class BTCTransSystem {
 	 */
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
-		BTCTransSystem btc_ts = new BTCTransSystem(300, MODE.REVIEW);
+		BTCTransSystem btc_ts = new BTCTransSystem(600, MODE.ACTUAL);
 		btc_ts.Route();
 	}
 }
