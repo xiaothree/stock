@@ -1,8 +1,8 @@
 package com.latupa.stock;
 
 import java.io.BufferedReader;
-import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -625,8 +625,12 @@ public class BTCData {
 	 * 从配置文件获取mysql连接
 	 */
 	public DBInst ConnectDB() {
+		
+//		String dbfile = FLAG_FILE_DIR + dbconf_file;
+		String dbfile = dbconf_file;
 		try {
-			FileInputStream fis		= new FileInputStream(FLAG_FILE_DIR + dbconf_file);
+			//FileInputStream fis		= new FileInputStream(dbfile);
+			InputStream fis			= BTCData.class.getClassLoader().getResourceAsStream(dbfile);
 	        InputStreamReader isr	= new InputStreamReader(fis, "utf8");
 	        BufferedReader br		= new BufferedReader(isr);
 	        
@@ -650,12 +654,12 @@ public class BTCData {
 	        	return dbInst;
 	        }
 	        else {
-	        	log.error("read " + FLAG_FILE_DIR + dbconf_file + " is null!");
+	        	log.error("read " + dbfile + " is null!");
 	        	return null;
 	        }
 		}
 		catch (Exception e) {
-			log.error("read " + FLAG_FILE_DIR + dbconf_file + " failed!", e);
+			log.error("read " + dbfile + " failed!", e);
 			return null;
 		}
 	}
