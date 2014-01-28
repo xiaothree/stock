@@ -17,10 +17,10 @@
 		require_once("btc_query.php");
 
 		function usage() {
-			echo "btc_k_graph.php?data_cycle=[60|120|300|600]\n";
+			echo "btc_k_graph.php?data_cycle=[60|120|300|600]&num=[int|0]\n";
 		}
 
-		if (!isset($_GET["data_cycle"])) {
+		if (!isset($_GET["data_cycle"] || !isset($_GET["num"])) {
 			usage();
 			exit;
 		}
@@ -31,7 +31,9 @@
 			exit;
 		}
 
-		$k_daily = query_summary_daily($data_cycle);
+		$num = $_GET["num"];
+
+		$k_daily = query_summary_daily($data_cycle, $num);
 		//var_dump($k_daily);
 		$json_k_daily=json_encode($k_daily);
 		//var_dump($json_k_daily);

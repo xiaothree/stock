@@ -1,8 +1,6 @@
 package com.latupa.stock;
 
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
 import java.text.DateFormat;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
@@ -307,6 +305,9 @@ public class BTCTransSystem {
 					if (user_info != null) {
 						this.btc_init_amount	= user_info.cny;
 						this.btc_curt_amount	= user_info.cny;
+						
+						this.btc_day_amount_init	= this.btc_init_amount;
+						this.btc_year_amount_init	= this.btc_init_amount;
 					}
 					else {
 						log.info("change failed! get curt real amount failed");
