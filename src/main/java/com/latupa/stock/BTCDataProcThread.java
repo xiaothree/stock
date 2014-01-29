@@ -109,17 +109,17 @@ public class BTCDataProcThread extends Thread {
 					int count = this.btc_update_sys.count_num_map.get(data_cycle);
 					this.btc_update_sys.count_num_map.put(data_cycle, ++count);
 					
-					//第一次先不处理，避免数据不完整
+					//第一次需要加载数据到内存，但是不跳过第一次的数据，有数据总比没有好
 					if (count == 1) {
 						
-						log.info("skip for first proc cycle " + data_cycle);
-						btc_data.BTCSliceRecordInit();
+//						log.info("skip for first proc cycle " + data_cycle);
+//						btc_data.BTCSliceRecordInit();
 						
 						//加载数据库中的历史数据到内存中
 						log.info("load data from db for cycle " + data_cycle);
 						btc_data.BTCDataLoadFromDB(0);
 						log.info("load finish");
-						continue;
+//						continue;
 					}
 					
 					if (slice_record.init_flag == false) {

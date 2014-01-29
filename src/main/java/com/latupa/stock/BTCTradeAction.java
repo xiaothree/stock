@@ -69,7 +69,7 @@ public class BTCTradeAction {
 			double buy_quantity	= cny / (buy_price + BTCApi.TRADE_DIFF);
 			
 			//委托买单
-			log.info("buy total cny:" + cny + ", price:" + buy_price + ", amount:" + buy_quantity);
+			log.info("buy total cny:" + cny + ", price:" + buy_price + ", quantify:" + buy_quantity + ", buy1:" + ticker.buy + ", sell1:" + ticker.sell);
 			String order_id	= btc_api.ApiTrade("buy", buy_price, buy_quantity);
 			log.info("order_id:" + order_id);
 
@@ -181,7 +181,7 @@ public class BTCTradeAction {
 			//double sell_price	= ticker.sell - BTCApi.TRADE_DIFF * sell_count;
 			
 			//委托卖单
-			log.info("sell price:" + sell_price + ", amount:" + sell_quantity);
+			log.info("sell price:" + sell_price + ", quantity:" + sell_quantity + ", buy1:" + ticker.buy + ", sell1:" + ticker.sell);
 			String order_id	= btc_api.ApiTrade("sell", sell_price, sell_quantity);
 			log.info("order_id:" + order_id);
 			int count = 0;
