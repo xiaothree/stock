@@ -504,9 +504,9 @@ public class BTCTransSystem {
 
 				if (stamp_sec % this.data_cycle == 0) {
 					
-					//确保update thread 已经更新
+					//确保update thread已经更新
 					try {
-						Thread.sleep(1000);
+						Thread.sleep(10000);
 					} catch (InterruptedException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();

@@ -49,7 +49,7 @@ public class BTCUpdateSystem {
 		alist.add(300);
 		alist.add(600);
 		
-		BTCUpdateSystem btc_us = new BTCUpdateSystem(alist, 20);
+		BTCUpdateSystem btc_us = new BTCUpdateSystem(alist, 10);
 		btc_us.Route();
 	}
 

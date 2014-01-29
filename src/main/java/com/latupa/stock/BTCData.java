@@ -279,7 +279,12 @@ public class BTCData {
 				this.btc_s_record.open + ", " +
 				this.btc_s_record.close + ", " +
 				this.btc_s_record.high + ", " +
-				this.btc_s_record.low + ")";
+				this.btc_s_record.low + ")" +
+				"ON DUPLICATE KEY UPDATE " +
+				"`open` = " + this.btc_s_record.open + ", " +
+				"`close` = " + this.btc_s_record.close + ", " +
+				"`high` = " + this.btc_s_record.high + ", " +
+				"`low` = " + this.btc_s_record.low;
 
 		dbInst.updateSQL(sql);
 	}
