@@ -149,7 +149,8 @@ public class BTCTradeAction {
 			ticker.Show();
 			
 			//计算委托价格
-			double buy_price	= (ticker.buy + ticker.sell) / 2 + BTCApi.TRADE_DIFF;
+			double buy_price	= (ticker.buy + ticker.sell) / 2;
+//			double buy_price	= (ticker.buy + ticker.sell) / 2 + BTCApi.TRADE_DIFF;
 			//double buy_price	= ticker.buy + BTCApi.TRADE_DIFF;
 			double buy_quantity	= cny / (buy_price + BTCApi.TRADE_DIFF);
 			
