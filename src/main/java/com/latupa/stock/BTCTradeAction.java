@@ -119,7 +119,7 @@ public class BTCTradeAction {
 				break;
 			}
 			
-			Thread.sleep(5000);
+			Thread.sleep(10000);
 			trade_ret = btc_api.ApiGetOrder(order_id);
 		}
 		
@@ -129,8 +129,17 @@ public class BTCTradeAction {
 	public TradeRet DoBuy() throws InterruptedException {
 		
 		int buy_count	= 0;
+		double buy_total_quantity = 0;   //用于记录分批买入汇总的值
 		
 		while (true) {
+			buy_count++;
+			if (buy_count > 5) {
+				log.error("force buy failed!");
+				return null;
+			}
+			
+			log.info("buy for " + buy_count + " times");
+			
 			//获取账户中的金额
 			UserInfo user_info = DoUserInfo();
 			if (user_info == null) {
@@ -171,12 +180,17 @@ public class BTCTradeAction {
 			}
 			else {
 				trade_ret.Show();
+				
+				buy_total_quantity += trade_ret.deal_amount;
+				
 				if (trade_ret.status == TradeRet.STATUS.TOTAL) {
+					trade_ret.deal_amount = buy_total_quantity;
 					return trade_ret;
 				}
 				else if (trade_ret.status == TradeRet.STATUS.PARTER) {//如果是部分成交，则继续卖出剩余的部分
 					//如果剩余部分小于最小买入份额，就返回
 					if (trade_ret.amount - trade_ret.deal_amount < 0.01) {
+						trade_ret.deal_amount = buy_total_quantity;
 						return trade_ret;
 					}
 				}
@@ -186,12 +200,6 @@ public class BTCTradeAction {
 			boolean ret = DoCancelOrder(order_id);
 			if (ret != true) {
 				log.error("cancel trade failed!");
-				return null;
-			}
-			
-			buy_count++;
-			if (buy_count == 5) {
-				log.error("force buy failed!");
 				return null;
 			}
 		}
@@ -232,6 +240,14 @@ public class BTCTradeAction {
 		
 		sell_count = 0;
 		while (true) {
+			
+			sell_count++;
+			if (sell_count > 5) {
+				log.error("force sell failed!");
+				return null;
+			}
+			log.info("sell for " + sell_count + " times");
+			
 			//获取当前卖一价
 			Ticker ticker = DoTicker();
 			if (ticker == null) {
@@ -273,12 +289,6 @@ public class BTCTradeAction {
 			boolean ret = DoCancelOrder(order_id);
 			if (ret != true) {
 				log.error("cancel trade failed!");
-				return null;
-			}
-			
-			sell_count++;
-			if (sell_count == 5) {
-				log.error("force sell failed!");
 				return null;
 			}
 		}
