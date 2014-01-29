@@ -41,7 +41,7 @@ import org.apache.commons.logging.LogFactory;
 
 public class BTCTransStrategy2 implements BTCTransStrategy {
 
-public static final Log log = LogFactory.getLog(BTCTransStrategy1.class);
+public static final Log log = LogFactory.getLog(BTCTransStrategy2.class);
 	
 	public enum STATUS {
 		READY,	//待买，即空仓

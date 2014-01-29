@@ -200,10 +200,13 @@ public class BTCTransSystem {
 			//更新总金额
 			if (this.mode == MODE.ACTUAL && this.trade_mode == true) {//实盘（真实交易）
 				try {
-					UserInfo user_info = this.btc_trade_action.GetUserInfo();
+					UserInfo user_info = this.btc_trade_action.DoUserInfo();
 					if (user_info != null) {
 						this.btc_curt_amount = user_info.cny;
 						this.btc_accumulate_profit = this.btc_curt_amount - this.btc_init_amount;
+					}
+					else {
+						log.error("get cnt failed");
 					}
 				} catch (InterruptedException e) {
 					log.error("get user info failed!");
@@ -548,7 +551,7 @@ public class BTCTransSystem {
 	 */
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
-		BTCTransSystem btc_ts = new BTCTransSystem(300, MODE.ACTUAL);
+		BTCTransSystem btc_ts = new BTCTransSystem(300, MODE.REVIEW);
 		btc_ts.Route();
 	}
 }

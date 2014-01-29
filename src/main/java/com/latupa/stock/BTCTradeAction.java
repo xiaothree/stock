@@ -26,107 +26,169 @@ public class BTCTradeAction {
 	 * @return
 	 * @throws InterruptedException
 	 */
-	public UserInfo GetUserInfo() throws InterruptedException {
-		UserInfo user_info	= btc_api.ApiUserInfo();
+	public UserInfo DoUserInfo() throws InterruptedException {
 		int count = 0;
+		UserInfo user_info	= btc_api.ApiUserInfo();
 		while (user_info == null) {
-			Thread.sleep(5000);
 			count++;
-			if (count == 10) {
+			if (count == 5) {
 				break;
 			}
+			Thread.sleep(5000);
 			user_info = btc_api.ApiUserInfo();
 		}
 		return user_info;
 	}
 	
+	/**
+	 * 获取当前行情
+	 * @return
+	 * @throws InterruptedException 
+	 */
+	public Ticker DoTicker() throws InterruptedException {
+		int count = 0;
+		Ticker ticker = btc_api.ApiTicker();
+		while (ticker == null) {
+			count++;
+			if (count == 5) {
+				break;
+			}
+			Thread.sleep(5000);
+			ticker = btc_api.ApiTicker();
+		}
+		return ticker;
+	}
+	
+	/**
+	 * 撤销委托
+	 * @param order_id
+	 * @return
+	 * @throws InterruptedException 
+	 */
+	public boolean DoCancelOrder(String order_id) throws InterruptedException {
+		int count = 0;
+		boolean ret	= btc_api.ApiCancelOrder(order_id);
+		while (ret != true) {
+			count++;
+			if (count == 5) {
+				break;
+			}
+			Thread.sleep(5000);
+			ret	= btc_api.ApiCancelOrder(order_id);
+		}
+		
+		return ret;
+	}
+	
+	/**
+	 * 委托买卖
+	 * @param type
+	 * @param price
+	 * @param quantity
+	 * @return
+	 * @throws InterruptedException
+	 */
+	public String DoTrade(String type, double price, double quantity) throws InterruptedException {
+		int count = 0;
+		String order_id = btc_api.ApiTrade(type, price, quantity);
+		while (order_id == null) {
+			count++;
+			if (count == 5) {
+				break;
+			}
+			
+			Thread.sleep(5000);
+			order_id = btc_api.ApiTrade(type, price, quantity);
+		}
+		return order_id;
+	}
+	
+	/**
+	 * 获取订单状态
+	 * @param order_id
+	 * @return
+	 * @throws InterruptedException
+	 */
+	public TradeRet DoGetOrder(String order_id) throws InterruptedException {
+		int count = 0;
+		TradeRet trade_ret = btc_api.ApiGetOrder(order_id);
+		while (trade_ret == null || 
+				(trade_ret != null && trade_ret.status != TradeRet.STATUS.TOTAL)) {
+			count++;
+			if (count == 5) {
+				break;
+			}
+			
+			Thread.sleep(5000);
+			trade_ret = btc_api.ApiGetOrder(order_id);
+		}
+		
+		return trade_ret;
+	}
+	
 	public TradeRet DoBuy() throws InterruptedException {
 		
-		int buy_count = 0;
+		int buy_count	= 0;
 		
 		while (true) {
-			
-			buy_count++;
-			
 			//获取账户中的金额
-			UserInfo user_info	= null;
-			while (user_info == null) {
-				user_info	= btc_api.ApiUserInfo();
-				user_info.Show();
-				Thread.sleep(5000);
+			UserInfo user_info = DoUserInfo();
+			if (user_info == null) {
+				log.error("get account info failed!");
+				return null;
 			}
+			user_info.Show();
 			double cny	= user_info.cny;
 			
 			//获取当前买一价
-			Ticker ticker	= null;
-			while (ticker == null) {
-				ticker	= btc_api.ApiTicker();
-				ticker.Show();
-				Thread.sleep(1000);
+			Ticker ticker = DoTicker();
+			if (ticker == null) {
+				log.error("get curt price failed!");
+				return null;
 			}
+			ticker.Show();
+			
+			//计算委托价格
 			double buy_price	= (ticker.buy + ticker.sell) / 2 + BTCApi.TRADE_DIFF;
 			//double buy_price	= ticker.buy + BTCApi.TRADE_DIFF;
 			double buy_quantity	= cny / (buy_price + BTCApi.TRADE_DIFF);
 			
 			//委托买单
 			log.info("buy total cny:" + cny + ", price:" + buy_price + ", quantify:" + buy_quantity + ", buy1:" + ticker.buy + ", sell1:" + ticker.sell);
-			String order_id	= btc_api.ApiTrade("buy", buy_price, buy_quantity);
+			String order_id	= DoTrade("buy", buy_price, buy_quantity);
+			if (order_id == null) {
+				log.error("trade for buy failed!");
+				return null;
+			}
 			log.info("order_id:" + order_id);
 
-			int count = 0;
-			while (order_id == null) {
-				Thread.sleep(5000);
-				
-				log.info("buy total cny:" + cny + ", price:" + buy_price + ", amount:" + buy_quantity);
-				order_id = btc_api.ApiTrade("buy", buy_price, buy_quantity);
-				log.info("order_id:" + order_id);
-				
-				count++;
-				if (count == 5) {
-					log.error("trade for buy failed!");
-					System.exit(0);
-				}
-			}
-			
 			//获取委托的结果
-			count = 0;
-			while (true) {
-				
-				Thread.sleep(5000);
-				
-				TradeRet trade_ret	= btc_api.ApiGetOrder(order_id);
-				if (trade_ret != null) {
-					trade_ret.Show();
-					if (trade_ret.status == TradeRet.STATUS.TOTAL) {
+			TradeRet trade_ret = DoGetOrder(order_id);
+			if (trade_ret == null) {
+				log.error("get order result failed!");
+				return null;
+			}
+			else {
+				trade_ret.Show();
+				if (trade_ret.status == TradeRet.STATUS.TOTAL) {
+					return trade_ret;
+				}
+				else if (trade_ret.status == TradeRet.STATUS.PARTER) {//如果是部分成交，则继续卖出剩余的部分
+					//如果剩余部分小于最小买入份额，就返回
+					if (trade_ret.amount - trade_ret.deal_amount < 0.01) {
 						return trade_ret;
 					}
-				}
-				
-				count++;
-				if (count == 5) {
-					if (trade_ret != null && trade_ret.status == TradeRet.STATUS.PARTER) {//如果是部分成交，则继续卖出剩余的部分
-						//如果剩余部分小于最小买入份额，就返回
-						if (trade_ret.amount - trade_ret.deal_amount < 0.01) {
-							return trade_ret;
-						}
-					}
-					break;
 				}
 			}
 			
 			//撤销委托
-			count = 0;
-			boolean ret	= btc_api.ApiCancelOrder(order_id);
-			while (ret != true) {
-				count++;
-				if (count == 5) {
-					log.error("cancel trade failed!");
-					return null;
-				}
-				Thread.sleep(5000);
-				ret	= btc_api.ApiCancelOrder(order_id);
+			boolean ret = DoCancelOrder(order_id);
+			if (ret != true) {
+				log.error("cancel trade failed!");
+				return null;
 			}
 			
+			buy_count++;
 			if (buy_count == 5) {
 				log.error("force buy failed!");
 				return null;
@@ -142,16 +204,19 @@ public class BTCTradeAction {
 	 */
 	public TradeRet DoSell(int position) throws InterruptedException {
 		
+		int sell_count	= 0;
+		
 		//获取账户中的数量
-		UserInfo user_info	= null;
-		while (user_info == null) {
-			user_info	= btc_api.ApiUserInfo();
-			user_info.Show();
-			Thread.sleep(5000);
+		UserInfo user_info = DoUserInfo();
+		if (user_info == null) {
+			log.error("get account info failed!");
+			return null;
 		}
+		user_info.Show();
 		
 		//如果没有持有中的数量，则直接返回
 		if (user_info.btc == 0) {
+			log.info("no quantity to sell");
 			return new TradeRet();
 		}
 		
@@ -164,78 +229,53 @@ public class BTCTradeAction {
 			sell_quantity	= user_info.btc * position / 10;
 		}
 		
-		int sell_count = 0;
-		
+		sell_count = 0;
 		while (true) {
-			
-			sell_count++;
-			
 			//获取当前卖一价
-			Ticker ticker = null;
-			while (ticker == null) {
-				ticker	= btc_api.ApiTicker();
-				ticker.Show();
-				Thread.sleep(5000);
+			Ticker ticker = DoTicker();
+			if (ticker == null) {
+				log.error("get curt price failed!");
+				return null;
 			}
-			double sell_price	= (ticker.sell + ticker.buy) / 2 - BTCApi.TRADE_DIFF * sell_count;
+			ticker.Show();
+			
+			//计算卖出委托价
+			double sell_price = (ticker.sell + ticker.buy) / 2 - BTCApi.TRADE_DIFF * sell_count;
 			//double sell_price	= ticker.sell - BTCApi.TRADE_DIFF * sell_count;
 			
 			//委托卖单
 			log.info("sell price:" + sell_price + ", quantity:" + sell_quantity + ", buy1:" + ticker.buy + ", sell1:" + ticker.sell);
-			String order_id	= btc_api.ApiTrade("sell", sell_price, sell_quantity);
-			log.info("order_id:" + order_id);
-			int count = 0;
-			while (order_id == null) {
-				Thread.sleep(5000);
-				
-				log.info("sell price:" + sell_price + ", amount:" + sell_quantity);
-				order_id = btc_api.ApiTrade("sell", sell_price, sell_quantity);
-				log.info("order_id:" + order_id);
-				
-				count++;
-				if (count == 5) {
-					log.error("trade for sell failed!");
-					System.exit(0);
-				}
+			String order_id	= DoTrade("sell", sell_price, sell_quantity);
+			if (order_id == null) {
+				log.error("trade for sell failed!");
+				return null;
 			}
+			log.info("order_id:" + order_id);
 			
 			//获取委托的结果
-			count = 0;
-			while (true) {
-				
-				Thread.sleep(5000);
-				
-				TradeRet trade_ret	= btc_api.ApiGetOrder(order_id);
-				if (trade_ret != null) {
-					trade_ret.Show();
-					if (trade_ret.status == TradeRet.STATUS.TOTAL) {
-						return trade_ret;
-					}
+			TradeRet trade_ret = DoGetOrder(order_id);
+			if (trade_ret == null) {
+				log.error("get order result failed!");
+				return null;
+			}
+			else {
+				trade_ret.Show();
+				if (trade_ret.status == TradeRet.STATUS.TOTAL) {
+					return trade_ret;
 				}
-								
-				count++;
-				if (count == 5) {
-					if (trade_ret != null && trade_ret.status == TradeRet.STATUS.PARTER) {//如果是部分成交，则继续卖出剩余的部分
-						sell_quantity -= trade_ret.deal_amount;
-					}
-					break;
+				else if (trade_ret.status == TradeRet.STATUS.PARTER) {//如果是部分成交，则继续卖出剩余的部分
+					sell_quantity -= trade_ret.deal_amount;
 				}
 			}
 			
 			//撤销委托
-			count = 0;
-			boolean ret	= btc_api.ApiCancelOrder(order_id);
-			while (ret != true) {
-				count++;
-				if (count == 5) {
-					log.error("cancel trade failed!");
-					return null;
-				}
-				Thread.sleep(5000);
-				ret	= btc_api.ApiCancelOrder(order_id);
+			boolean ret = DoCancelOrder(order_id);
+			if (ret != true) {
+				log.error("cancel trade failed!");
+				return null;
 			}
 			
-			
+			sell_count++;
 			if (sell_count == 5) {
 				log.error("force sell failed!");
 				return null;
