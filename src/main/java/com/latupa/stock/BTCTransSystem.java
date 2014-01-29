@@ -551,7 +551,12 @@ public class BTCTransSystem {
 	 */
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
-		BTCTransSystem btc_ts = new BTCTransSystem(300, MODE.REVIEW);
+		int data_cycle = Integer.parseInt(args[0]);
+		MODE mode = MODE.values()[Integer.parseInt(args[1])];//0-REVIEW;1-ACTUAL
+		
+		System.out.println("para:" + data_cycle + "," + mode);
+		
+		BTCTransSystem btc_ts = new BTCTransSystem(data_cycle, mode);
 		btc_ts.Route();
 	}
 }
