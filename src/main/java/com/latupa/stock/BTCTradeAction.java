@@ -171,6 +171,9 @@ public class BTCTradeAction {
 				return null;
 			}
 			log.info("order_id:" + order_id);
+			
+			//避免委托买单和查单过于频繁
+			Thread.sleep(10000);
 
 			//获取委托的结果
 			TradeRet trade_ret = DoGetOrder(order_id);
@@ -194,6 +197,12 @@ public class BTCTradeAction {
 						return trade_ret;
 					}
 				}
+				else if (trade_ret.status == TradeRet.STATUS.WAIT) { //如果之前分批买入有成功的，那么也返回成功
+					if (buy_total_quantity > 0) {
+						trade_ret.deal_amount = buy_total_quantity;
+						return trade_ret;
+					}
+				}
 			}
 			
 			//撤销委托
@@ -212,8 +221,6 @@ public class BTCTradeAction {
 	 * @throws InterruptedException
 	 */
 	public TradeRet DoSell(int position) throws InterruptedException {
-		
-		int sell_count	= 0;
 		
 		//获取账户中的数量
 		UserInfo user_info = DoUserInfo();
@@ -238,14 +245,10 @@ public class BTCTradeAction {
 			sell_quantity	= user_info.btc * position / 10;
 		}
 		
-		sell_count = 0;
-		while (true) {
+		int sell_count = 0;
+		while (sell_quantity > 0) {
 			
 			sell_count++;
-			if (sell_count > 5) {
-				log.error("force sell failed!");
-				return null;
-			}
 			log.info("sell for " + sell_count + " times");
 			
 			//获取当前卖一价
@@ -257,7 +260,8 @@ public class BTCTradeAction {
 			ticker.Show();
 			
 			//计算卖出委托价
-			double sell_price = (ticker.sell + ticker.buy) / 2 - BTCApi.TRADE_DIFF * sell_count;
+			double sell_price = (ticker.sell + ticker.buy) / 2;
+//			double sell_price = (ticker.sell + ticker.buy) / 2 - BTCApi.TRADE_DIFF * sell_count;
 			//double sell_price	= ticker.sell - BTCApi.TRADE_DIFF * sell_count;
 			
 			//委托卖单
@@ -268,6 +272,9 @@ public class BTCTradeAction {
 				return null;
 			}
 			log.info("order_id:" + order_id);
+			
+			//避免委托卖单和查单过于频繁
+			Thread.sleep(10000);
 			
 			//获取委托的结果
 			TradeRet trade_ret = DoGetOrder(order_id);
