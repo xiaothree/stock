@@ -131,11 +131,18 @@ public class BTCTradeAction {
 		int buy_count	= 0;
 		double buy_total_quantity = 0;   //用于记录分批买入汇总的值
 		
+		TradeRet trade_ret = null;
+		
 		while (true) {
 			buy_count++;
 			if (buy_count > 5) {
-				log.error("force buy failed!");
-				return null;
+				if (buy_total_quantity > 0) {//如果之前分批买入有成功的，那么也返回成功
+					return trade_ret;
+				}
+				else {
+					log.error("force buy failed!");
+					return null;
+				}
 			}
 			
 			log.info("buy for " + buy_count + " times");
@@ -176,7 +183,7 @@ public class BTCTradeAction {
 			Thread.sleep(10000);
 
 			//获取委托的结果
-			TradeRet trade_ret = DoGetOrder(order_id);
+			trade_ret = DoGetOrder(order_id);
 			if (trade_ret == null) {
 				log.error("get order result failed!");
 				return null;
@@ -186,20 +193,14 @@ public class BTCTradeAction {
 				
 				buy_total_quantity += trade_ret.deal_amount;
 				
+				trade_ret.deal_amount = buy_total_quantity;
+				
 				if (trade_ret.status == TradeRet.STATUS.TOTAL) {
-					trade_ret.deal_amount = buy_total_quantity;
 					return trade_ret;
 				}
-				else if (trade_ret.status == TradeRet.STATUS.PARTER) {//如果是部分成交，则继续卖出剩余的部分
+				else if (trade_ret.status == TradeRet.STATUS.PARTER) {//如果是部分成交
 					//如果剩余部分小于最小买入份额，就返回
 					if (trade_ret.amount - trade_ret.deal_amount < 0.01) {
-						trade_ret.deal_amount = buy_total_quantity;
-						return trade_ret;
-					}
-				}
-				else if (trade_ret.status == TradeRet.STATUS.WAIT) { //如果之前分批买入有成功的，那么也返回成功
-					if (buy_total_quantity > 0) {
-						trade_ret.deal_amount = buy_total_quantity;
 						return trade_ret;
 					}
 				}
@@ -299,6 +300,8 @@ public class BTCTradeAction {
 				return null;
 			}
 		}
+		
+		return null;
 	}
 	
 	
