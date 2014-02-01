@@ -93,9 +93,9 @@ public class BTCDataProcThread extends Thread {
 				
 				if (stamp_sec % data_cycle == 0) {	
 					
-					//等待5s，让数据抓取完成该周期最后的一次数据获取
+					//等待1s，让数据抓取完成该周期最后的一次数据获取
 					try {
-						Thread.sleep(5000);
+						Thread.sleep(1000);
 					} catch (InterruptedException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();

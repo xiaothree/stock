@@ -507,14 +507,6 @@ public class BTCTransSystem {
 
 				if (stamp_sec % this.data_cycle == 0) {
 					
-					//确保update thread已经更新
-					try {
-						Thread.sleep(10000);
-					} catch (InterruptedException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-					
 					try {
 						this.TradeModeSwitch();
 					} catch (InterruptedException e) {
@@ -526,11 +518,26 @@ public class BTCTransSystem {
 					Date cur_date = new Date(stamp_millis);
 					String sDateTime = df.format(cur_date); 
 					
-					this.btc_data.BTCDataLoadFromDB(20);
-					if (this.btc_data.b_record_map.containsKey(sDateTime)) {
-						log.info("proc " + sDateTime);
-						ProcTrans(sDateTime);
+					while (true) {
+						this.btc_data.BTCDataLoadFromDB(20);
+						if (!this.btc_data.b_record_map.containsKey(sDateTime)) {
+							this.btc_data.b_record_map.clear();
+							log.info("just wait k of " + sDateTime);
+							try {
+								Thread.sleep(1000);
+							} catch (InterruptedException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+						}
+						else {
+							break;
+						}
 					}
+					
+					log.info("proc " + sDateTime);
+					ProcTrans(sDateTime);
+					
 					this.btc_data.b_record_map.clear();
 				}
 				
