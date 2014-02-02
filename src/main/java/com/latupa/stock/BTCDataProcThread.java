@@ -16,41 +16,48 @@ import org.apache.commons.logging.LogFactory;
 public class BTCDataProcThread extends Thread {
 	public static final Log log = LogFactory.getLog(BTCDataProcThread.class);
 	
-	public BTCUpdateSystem btc_update_sys;
+	public BTCData btc_data;
+	public int data_cycle;
 	
-	public BTCDataProcThread(BTCUpdateSystem btc_update_sys) {
-		this.btc_update_sys	= btc_update_sys;
+	public BTCFunc btc_func = new BTCFunc();
+	
+	public BTCDataProcThread(BTCData btc_data, int data_cycle) {
+		this.btc_data	= btc_data;
+		this.data_cycle	= data_cycle;
+		
+		//加载数据库中的历史数据到内存中
+		log.info("load data from db for cycle " + this.data_cycle);
+		this.btc_data.BTCDataLoadFromDB(0);
+		log.info("load finish");
 	}
 	
 	/**
 	 * 每条更新的价格记录，计算指标
 	 * @param sDateTime
 	 */
-	private void CalcFunc(String sDateTime, int data_cycle) {
-		
-		BTCData btc_data = this.btc_update_sys.data_map.get(data_cycle);
+	private void CalcFunc(String sDateTime) {
 		
 		//更新基础数值
-		btc_data.BTCRecordMemInsert(sDateTime);
-		btc_data.BTCRecordDBInsert(sDateTime);
-		btc_data.BTCSliceRecordInit();
+		this.btc_data.BTCRecordMemInsert(sDateTime);
+		this.btc_data.BTCRecordDBInsert(sDateTime);
+		this.btc_data.BTCSliceRecordInit();
 		//this.btc_trans_sys.btc_data.BTCRecordMemShow();
 		
 		//计算均线
-		MaRet ma_ret = btc_data.BTCCalcMa(this.btc_update_sys.btc_func, sDateTime);
-		btc_data.BTCMaRetMemUpdate(sDateTime, ma_ret);
-		btc_data.BTCMaRetDBUpdate(sDateTime);
+		MaRet ma_ret = this.btc_data.BTCCalcMa(this.btc_func, sDateTime);
+		this.btc_data.BTCMaRetMemUpdate(sDateTime, ma_ret);
+		this.btc_data.BTCMaRetDBUpdate(sDateTime);
 		
 		//计算布林线
-		BollRet boll_ret = btc_data.BTCCalcBoll(this.btc_update_sys.btc_func, sDateTime);
-		btc_data.BTCBollRetMemUpdate(sDateTime, boll_ret);
-		btc_data.BTCBollRetDBUpdate(sDateTime);
+		BollRet boll_ret = this.btc_data.BTCCalcBoll(this.btc_func, sDateTime);
+		this.btc_data.BTCBollRetMemUpdate(sDateTime, boll_ret);
+		this.btc_data.BTCBollRetDBUpdate(sDateTime);
 		
 		//计算Macd值
 		try {
-			MacdRet macd_ret = btc_data.BTCCalcMacd(this.btc_update_sys.btc_func, sDateTime, data_cycle);
-			btc_data.BTCMacdRetMemUpdate(sDateTime, macd_ret);
-			btc_data.BTCMacdRetDBUpdate(sDateTime);
+			MacdRet macd_ret = this.btc_data.BTCCalcMacd(this.btc_func, sDateTime, data_cycle);
+			this.btc_data.BTCMacdRetMemUpdate(sDateTime, macd_ret);
+			this.btc_data.BTCMacdRetDBUpdate(sDateTime);
 		} catch (ParseException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -58,6 +65,8 @@ public class BTCDataProcThread extends Thread {
 	}
 	
 	public void run() {
+		
+		log.info("data proc for " + this.data_cycle);
 		
 		DateFormat df	= new SimpleDateFormat("yyyyMMddHHmmss"); 
 		
@@ -82,60 +91,39 @@ public class BTCDataProcThread extends Thread {
 				continue;
 			}
 			
-			for (int data_cycle : this.btc_update_sys.data_map.keySet()) {
-					
-				if (stamp_sec % (24 * 60 * 60) == 0) {	//每天清理一次内存中的历史数据
-					log.info("clean cycle " + data_cycle);
-					
-					BTCData btc_data = this.btc_update_sys.data_map.get(data_cycle);
-					btc_data.BTCDataMemoryClean(2);
+			if (stamp_sec % (24 * 60 * 60) == 0) {	//每天清理一次内存中的历史数据
+				log.info("clean cycle " + this.data_cycle);
+				
+				this.btc_data.BTCDataMemoryClean(2);
+			}
+			
+			if (stamp_sec % this.data_cycle == 0) {	
+				
+				//等待1s，让数据抓取完成该周期最后的一次数据获取
+				try {
+					Thread.sleep(1000);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
 				}
 				
-				if (stamp_sec % data_cycle == 0) {	
-					
-					//等待1s，让数据抓取完成该周期最后的一次数据获取
-					try {
-						Thread.sleep(1000);
-					} catch (InterruptedException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-					
-					log.info("trigger cycle " + data_cycle);
-					
-					BTCData btc_data = this.btc_update_sys.data_map.get(data_cycle);
-					BTCDSliceRecord slice_record = btc_data.btc_s_record;
-					
-					int count = this.btc_update_sys.count_num_map.get(data_cycle);
-					this.btc_update_sys.count_num_map.put(data_cycle, ++count);
-					
-					//第一次需要加载数据到内存，但是不跳过第一次的数据，有数据总比没有好
-					if (count == 1) {
-						
-//						log.info("skip for first proc cycle " + data_cycle);
-//						btc_data.BTCSliceRecordInit();
-						
-						//加载数据库中的历史数据到内存中
-						log.info("load data from db for cycle " + data_cycle);
-						btc_data.BTCDataLoadFromDB(0);
-						log.info("load finish");
-//						continue;
-					}
-					
-					if (slice_record.init_flag == false) {
-					
-						log.info("update cycle " + data_cycle);
-						slice_record.Show();
+				log.info("trigger cycle " + this.data_cycle);
+				
+				BTCDSliceRecord slice_record = this.btc_data.btc_s_record;
+				
+				if (slice_record.init_flag == false) {
+				
+					log.info("update cycle " + this.data_cycle);
+					slice_record.Show();
 
-						int curt_k_num = btc_data.b_record_map.size();
-						
-						log.info("new k(" + data_cycle + "):" + curt_k_num);
-						
-						Date cur_date = new Date(stamp_millis);
-						String sDateTime = df.format(cur_date); 
-						
-						CalcFunc(sDateTime, data_cycle);
-					}
+					int curt_k_num = btc_data.b_record_map.size();
+					
+					log.info("new k(" + this.data_cycle + "):" + curt_k_num);
+					
+					Date cur_date = new Date(stamp_millis);
+					String sDateTime = df.format(cur_date); 
+					
+					CalcFunc(sDateTime);
 				}
 			}
 			
@@ -149,7 +137,6 @@ public class BTCDataProcThread extends Thread {
 			}
 		}
 	}
-	
 	
 	/**
 	 * @param args

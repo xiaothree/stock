@@ -12,18 +12,12 @@ public class BTCUpdateSystem {
 	//每个时间间隔分别对应BTCData<seconds, BTCData>
 	public HashMap<Integer, BTCData> data_map = new HashMap<Integer, BTCData>();
 	
-	//每个时间间隔分别记录处理次数<seconds, K线数>
-	public HashMap<Integer, Integer> count_num_map = new HashMap<Integer, Integer>();
-	
-	public BTCFunc btc_func = new BTCFunc();
-	
 	//数据采集周期(s)
 	public int fetch_cycle;
 	
 	public BTCUpdateSystem(ArrayList<Integer> data_cycle_list, int fetch_cycle) {
-		for (int i : data_cycle_list) {
-			this.data_map.put(i, new BTCData(i));
-			this.count_num_map.put(i, 0);
+		for (int data_cycle : data_cycle_list) {
+			this.data_map.put(data_cycle, new BTCData(data_cycle));
 		}
 		
 		this.fetch_cycle = fetch_cycle;
@@ -34,8 +28,13 @@ public class BTCUpdateSystem {
 		BTCUpdateThread update_thread = new BTCUpdateThread(this);
 		update_thread.start();
 		
-		BTCDataProcThread data_proc_thread = new BTCDataProcThread(this);
-		data_proc_thread.start();
+		//每个K线周期独立线程更新
+		for (int data_cycle : this.data_map.keySet()) {
+			BTCData btc_data = this.data_map.get(data_cycle);
+			
+			BTCDataProcThread data_proc_thread = new BTCDataProcThread(btc_data, data_cycle);
+			data_proc_thread.start();
+		}
 	}
 	
 	/**
