@@ -4,10 +4,10 @@ public interface BTCTransStrategy {
 	
 	/**
 	 * 是否买入
-	 * 先简化，如果需要买，则全部资金买入
+	 * 先简化，如果需要买，则全部资金买入，返回买入原因int，如果为0则表示不买
 	 * @return
 	 */
-	public boolean IsBuy(String sDateTime);
+	public int IsBuy(String sDateTime);
 	
 	/**
 	 * 是否卖出

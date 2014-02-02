@@ -50,6 +50,11 @@ public static final Log log = LogFactory.getLog(BTCTransStrategy2.class);
 		HALF;	//半仓
 	};
 	
+	public final static int CONTIDION_MULTI_BOTTOM	= 0x1;  //多重底
+	public final static int CONTIDION_DOUBLE_CROSS	= 0x2;  //两次金叉
+	public final static int CONTIDION_MA_MACD_UP	= 0x4;  //均线支撑&&macd红线变长
+	public final static int CONTIDION_MA_BOLL_UP	= 0x8;  //均线支撑&&贴boll上轨
+	
 	//当前状态
 	public STATUS curt_status = STATUS.READY;
 	
@@ -110,7 +115,8 @@ public static final Log log = LogFactory.getLog(BTCTransStrategy2.class);
 				this.is_ma_bull_arrange	= true;
 				
 				if (this.curt_status == STATUS.BUYIN) {
-					this.curt_status	= STATUS.BULL;
+					this.curt_status = STATUS.BULL;
+					log.info("TransProcess: status from " + STATUS.BUYIN + " to " + STATUS.BULL);
 				}
 			}
 		}
@@ -156,6 +162,7 @@ public static final Log log = LogFactory.getLog(BTCTransStrategy2.class);
 			//macd绿线变短
 			else if (record_2cycle_before.macd_record.macd > record_1cycle_before.macd_record.macd &&
 					record.macd_record.macd > record_1cycle_before.macd_record.macd) {
+				this.is_macd_bottom	= true;
 				this.status_down_macd_count++;
 				
 				//之前有过底
@@ -193,13 +200,15 @@ public static final Log log = LogFactory.getLog(BTCTransStrategy2.class);
 		}
 	}
 	
-	public boolean IsBuy(String sDateTime) {
+	public int IsBuy(String sDateTime) {
 		
 		boolean is_buy = false;
+		int ret = 0;
 		DecimalFormat df1 = new DecimalFormat("#0.00");
 		
 		//低位二次金叉
 		if (this.is_double_gold_cross) {
+			ret = CONTIDION_DOUBLE_CROSS;
 			is_buy	= true;
 			this.curt_status	= STATUS.BUYIN;
 			log.info("TransProcess: time:" + sDateTime + ", price:" + df1.format(this.curt_price) + ", buy for double_gold_cross, status from " + STATUS.READY + " to " + STATUS.BUYIN);
@@ -208,12 +217,14 @@ public static final Log log = LogFactory.getLog(BTCTransStrategy2.class);
 		//均线支撑
 		if (this.is_ma_support) {
 			if (this.is_macd_up) {
+				ret = CONTIDION_MA_MACD_UP;
 				is_buy	= true;
 				this.curt_status	= STATUS.BUYIN;
 				log.info("TransProcess: time:" + sDateTime + ", price:" + df1.format(this.curt_price) + ", buy for ma_support && macd_up, status from " + STATUS.READY + " to " + STATUS.BUYIN);
 			}
 			
 			if (this.is_boll_up) {
+				ret = CONTIDION_MA_BOLL_UP;
 				is_buy	= true;
 				this.curt_status	= STATUS.BUYIN;
 				log.info("TransProcess: time:" + sDateTime + ", price:" + df1.format(this.curt_price) + ", buy for ma_support && boll_up, status from " + STATUS.READY + " to " + STATUS.BUYIN);
@@ -222,8 +233,9 @@ public static final Log log = LogFactory.getLog(BTCTransStrategy2.class);
 		
 		//多重底
 		if (this.is_multi_macd_bottom) {
+			ret = CONTIDION_MULTI_BOTTOM;
 			is_buy	= true;
-			this.curt_status	= STATUS.BUYIN;
+			this.curt_status = STATUS.BUYIN;
 			log.info("TransProcess: time:" + sDateTime + ", price:" + df1.format(this.curt_price) + ", buy for multi_macd_bottom, status from " + STATUS.READY + " to " + STATUS.BUYIN);
 		}
 		
@@ -232,11 +244,9 @@ public static final Log log = LogFactory.getLog(BTCTransStrategy2.class);
 				this.curt_status	= STATUS.BULL;
 				log.info("TransProcess: status from " + STATUS.BUYIN + " to " + STATUS.BULL);
 			}
-			return true;
 		}
-		else {
-			return false;
-		}
+		
+		return ret;
 	}
 	
 	public int IsSell(String sDateTime) {

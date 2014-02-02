@@ -141,7 +141,7 @@ public class BTCTransStrategy1 implements BTCTransStrategy {
 		}
 	}
 	
-	public boolean IsBuy(String sDateTime) {
+	public int IsBuy(String sDateTime) {
 		
 //		if (this.is_gold_cross) {
 //			this.curt_status	= STATUS.READY;
@@ -155,17 +155,17 @@ public class BTCTransStrategy1 implements BTCTransStrategy {
 			if (this.is_macd_up) {
 				this.curt_status	= STATUS.BULL;
 				log.info("TransProcess: time:" + sDateTime + ", price:" + df1.format(this.curt_price) + ", buy for bull && macd_up, status from " + STATUS.READY + " to " + STATUS.BULL);
-				return true;
+				return 1;
 			}
 			
 			if (this.is_boll_up) {
 				this.curt_status	= STATUS.BULL;
 				log.info("TransProcess: time:" + sDateTime + ", price:" + df1.format(this.curt_price) + ", buy for bull && boll_up, status from " + STATUS.READY + " to " + STATUS.BULL);
-				return true;
+				return 2;
 			}
 		}
 		
-		return false;
+		return 0;
 	}
 	
 	public int IsSell(String sDateTime) {

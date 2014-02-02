@@ -55,6 +55,7 @@ public class BTCTransSystem {
 	public double btc_curt_amount;
 	
 	public double btc_buy_price;
+	public int btc_buy_reason;
 	public double btc_sell_price;
 	public double btc_profit;
 	public double btc_accumulate_profit;
@@ -99,7 +100,9 @@ public class BTCTransSystem {
 	//交易记录
 	public BTCTransRecord btc_trans_rec;
 	
-	public BTCTransSystem(int data_cycle, MODE mode) {
+	public String btc_trans_postfix;
+	
+	public BTCTransSystem(int data_cycle, MODE mode, String context) {
 		this.data_cycle	= data_cycle;
 		this.mode		= mode;
 		this.btc_data	= new BTCData(this.data_cycle);
@@ -109,7 +112,13 @@ public class BTCTransSystem {
 		this.btc_init_amount	= this.BTC_INIT_AMOUNT;
 		this.btc_curt_amount	= this.BTC_INIT_AMOUNT;
 		
-		this.btc_trans_rec.InitTable();
+		if (this.mode == MODE.REVIEW) {
+			this.btc_trans_postfix = context;
+		}
+		else {
+			this.btc_trans_postfix = "virtual";
+		}
+		this.btc_trans_rec.InitTable(this.btc_trans_postfix);
 		
 		ContextInit();
 	}
@@ -176,11 +185,6 @@ public class BTCTransSystem {
 			this.btc_fee_cost += (this.btc_sell_price * sell_quantity * this.BTC_FEE);
 		}
 		
-		this.btc_trans_rec.InsertTrans(sDateTime, 
-				BTCTransRecord.OPT.OPT_SELL, 
-				sell_quantity, 
-				this.btc_sell_price);
-		
 		DecimalFormat df1 = new DecimalFormat("#0.00");
 		log.info("TransProcess[SELL]: quantity:" + df1.format(sell_quantity) +
 				", price:" + df1.format(this.btc_sell_price) +
@@ -204,6 +208,7 @@ public class BTCTransSystem {
 					if (user_info != null) {
 						this.btc_curt_amount = user_info.cny;
 						this.btc_accumulate_profit = this.btc_curt_amount - this.btc_init_amount;
+						this.btc_profit = this.btc_curt_amount - last_curt_amount;
 					}
 					else {
 						log.error("get cnt failed");
@@ -219,6 +224,16 @@ public class BTCTransSystem {
 			}
 			
 			this.btc_accumulate_fee_cost += this.btc_fee_cost;
+			
+			this.btc_trans_rec.InsertTrans(this.btc_trans_postfix,
+					sDateTime, 
+					last_curt_amount, 
+					this.btc_curt_amount, 
+					this.btc_profit,
+					this.btc_buy_reason,
+					this.btc_buy_price,
+					this.btc_sell_price,
+					this.btc_time_buyin);
 		
 			log.info("TransProcess[SUMMARY]: " + "time:" + this.btc_time_buyin + "-" + sDateTime + 
 					", btc_price:" + this.btc_buy_price + "->" + this.btc_sell_price + "(" + df1.format((this.btc_sell_price - this.btc_buy_price) / this.btc_buy_price * 100) + "%)" + 
@@ -238,10 +253,12 @@ public class BTCTransSystem {
 	 * 执行买入操作
 	 * @param sDatetime 当前时间
 	 * @param price 当前价格
+	 * @param reason 买入原因
 	 */
-	public void BuyAction(String sDateTime, double price) {
+	public void BuyAction(String sDateTime, double price, int reason) {
 		
 		this.btc_time_buyin	= sDateTime;
+		this.btc_buy_reason	= reason;
 		
 		if (this.mode == MODE.ACTUAL && this.trade_mode == true) {//实盘（真实交易）
 			try {
@@ -270,11 +287,6 @@ public class BTCTransSystem {
 			this.btc_fee_cost += (this.btc_curt_amount * this.BTC_FEE);
 		}
 		
-		this.btc_trans_rec.InsertTrans(sDateTime, 
-				BTCTransRecord.OPT.OPT_BUY, 
-				this.btc_curt_quantity, 
-				this.btc_buy_price);
-		
 		DecimalFormat df1 = new DecimalFormat("#0.00");
 		log.info("TransProcess[BUY]: quantity:" + df1.format(this.btc_curt_quantity) +
 				", price:" + df1.format(this.btc_buy_price) +
@@ -297,11 +309,15 @@ public class BTCTransSystem {
 			
 			if (new File(TRANS_FILE_DIR + TRANS_FILE).exists()) {
 				//进入真实交易模式
+				
 				if (this.trade_mode == true) {//已经是真实交易
 					return;
 				}
 				else {//转成真实交易
 					log.info("start change to real trade mode ...");
+					
+					this.btc_trans_postfix = "actual";
+					this.btc_trans_rec.InitTable(this.btc_trans_postfix);
 					
 					//获取当前资金
 					UserInfo user_info	= this.btc_api.ApiUserInfo();
@@ -380,8 +396,9 @@ public class BTCTransSystem {
 		//如果还未入场，则判断是否要入场
 		if (this.btc_trans_stra.curt_status == BTCTransStrategy2.STATUS.READY) {
 			
-			if (this.btc_trans_stra.IsBuy(sDateTime) == true) {
-				this.BuyAction(sDateTime, record.close);
+			int ret = this.btc_trans_stra.IsBuy(sDateTime);
+			if (ret != 0) {
+				this.BuyAction(sDateTime, record.close, ret);
 				
 				RecordForDay(sDateTime, record, OPT.BUY);
 				RecordForYear(sDateTime, record, OPT.BUY);
@@ -560,10 +577,11 @@ public class BTCTransSystem {
 		// TODO Auto-generated method stub
 		int data_cycle = Integer.parseInt(args[0]);
 		MODE mode = MODE.values()[Integer.parseInt(args[1])];//0-REVIEW;1-ACTUAL
+		String context = args[2];
 		
-		System.out.println("para:" + data_cycle + "," + mode);
+		System.out.println("para:" + data_cycle + "," + mode + "," + context);
 		
-		BTCTransSystem btc_ts = new BTCTransSystem(data_cycle, mode);
+		BTCTransSystem btc_ts = new BTCTransSystem(data_cycle, mode, context);
 		btc_ts.Route();
 	}
 }

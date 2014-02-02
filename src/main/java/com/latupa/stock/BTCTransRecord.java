@@ -27,28 +27,36 @@ public class BTCTransRecord {
 		this.dbInst	= dbInst;
 	}
 	
-	public void InitTable() {
-		String sql = "create table if not exists " + BTC_TRANS_TABLE + 
-				"(`time` DATETIME not null default '0000-00-00 00:00:00', " +
-				"`opt` int NOT NULL default '0', " +
-				"`quantity` double NOT NULL default '0', " +
-				"`price` double NOT NULL default '0', " +
-				"`amount` double NOT NULL default '0', " +
+	public void InitTable(String postfix) {
+		String table_name = BTC_TRANS_TABLE + "__" + postfix;
+		String sql = "create table if not exists " + table_name + 
+				"(`time` DATETIME not null default '0000-00-00 00:00:00', " +   //卖出时间
+				"`start_amount` double NOT NULL default '0', " +   //买入时总资金
+				"`end_amount` double NOT NULL default '0', " +     //卖出时总资金
+				"`profit` double NOT NULL default '0', " +    	   //利润
+				"`reason` int NOT NULL default '0', " +            //买入原因
+				"`start_price` double NOT NULL default '0', " +    //买入价格
+				"`end_price` double NOT NULL default '0', " +      //卖出价格
+				"`start_time` DATETIME not null default '0000-00-00 00:00:00', " +   //买入时间
 				"PRIMARY KEY (`time`)" +
 				") ENGINE=InnoDB DEFAULT CHARSET=utf8";	
 		
 		dbInst.updateSQL(sql);
 	}
 	
-	public void InsertTrans(String time, OPT opt, double quantity, double price) {
+	public void InsertTrans(String postfix, String time, double start_amount, double end_amount, double profit, int reason, double start_price, double end_price, String start_time) {
 		
-		String sql = "insert ignore into " + BTC_TRANS_TABLE + 
-				"(`time`, `opt`, `quantity`, `price`, `amount`) values ('" +
+		String table_name = BTC_TRANS_TABLE + "__" + postfix;
+		String sql = "insert ignore into " + table_name + 
+				"(`time`, `start_amount`, `end_amount`, `profit`, `reason`, `start_price`, `end_price`) values ('" +
 				time + "', " +
-				opt.ordinal() + ", " +
-				quantity + ", " +
-				price + ", " +
-				(quantity * price) + ")";
+				start_amount + ", " +
+				end_amount + ", " +
+				profit + ", " +
+				reason + ", " +
+				start_price + ", " +
+				end_price + ", '" +
+				start_time + "')";
 		log.debug(sql);
 		
 		dbInst.updateSQL(sql);
