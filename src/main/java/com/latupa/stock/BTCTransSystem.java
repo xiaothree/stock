@@ -185,6 +185,12 @@ public class BTCTransSystem {
 			this.btc_fee_cost += (this.btc_sell_price * sell_quantity * this.BTC_FEE);
 		}
 		
+		this.btc_trans_rec.InsertTransDetail(this.btc_trans_postfix,
+				sDateTime, 
+				BTCTransRecord.OPT.OPT_SELL, 
+				sell_quantity, 
+				this.btc_sell_price);
+		
 		DecimalFormat df1 = new DecimalFormat("#0.00");
 		log.info("TransProcess[SELL]: quantity:" + df1.format(sell_quantity) +
 				", price:" + df1.format(this.btc_sell_price) +
@@ -286,6 +292,12 @@ public class BTCTransSystem {
 			this.btc_buy_price	= price;
 			this.btc_fee_cost += (this.btc_curt_amount * this.BTC_FEE);
 		}
+		
+		this.btc_trans_rec.InsertTransDetail(this.btc_trans_postfix,
+				sDateTime, 
+				BTCTransRecord.OPT.OPT_BUY, 
+				this.btc_curt_quantity, 
+				this.btc_buy_price);
 		
 		DecimalFormat df1 = new DecimalFormat("#0.00");
 		log.info("TransProcess[BUY]: quantity:" + df1.format(this.btc_curt_quantity) +
