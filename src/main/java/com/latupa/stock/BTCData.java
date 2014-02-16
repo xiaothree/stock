@@ -220,6 +220,8 @@ public class BTCData {
 	public void BTCDataLoadFromDB(int last_days) {
 		log.info("load history data from db(" + this.data_cycle + ") for " + last_days + " days");
 		
+		this.b_record_map.clear();
+		
 		String sql = "select floor(time + 0) as time, open, close, high, low, ma5, ma10, ma20, ma30, ma60, ma120, upper, mid, lower, bbi, ema13, ema26, diff, dea, macd from  " + BTC_PRICE_TABLE + "__" + this.data_cycle;
 		if (last_days != 0) {
 			sql += " order by time desc limit " + last_days;

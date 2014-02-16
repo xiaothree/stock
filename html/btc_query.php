@@ -6,7 +6,7 @@
 	define ("MYSQL_DB", "btc");
 	define ("TABLE_PRE", "btc_price__");
 
-	function query_summary_daily($table_postfix, $num) {
+	function query_summary_daily($table_postfix, $start, $end) {
 
 		$db = mysql_connect(MYSQL_HOST, MYSQL_NAME, MYSQL_PASSWORD);
 		if (!$db) {
@@ -19,11 +19,11 @@
 		mysql_query("use ".MYSQL_DB);
 		mysql_query("set names utf8");
 
-		//$sql = "select time, open, close, high, low from ".$table_name;
-		$sql = "select time, open, close, high, low from ".$table_name." order by time desc";
-		if ($num >  0) {
-			$sql .=  " limit $num";
+		$sql = "select time, open, close, high, low, truncate(macd, 2) as macd, truncate(diff, 2) as diff, truncate(dea, 2) as dea, truncate(upper, 2) as upper, truncate(mid, 2) as mid, truncate(lower, 2) as lower, truncate(bbi, 2) as bbi from ".$table_name." where time >= '".$start."'";
+		if ($end != "") {
+			$sql .=  " and time <= '".$end."'";
 		}
+		$sql .= " order by time desc";
 
 		//$sql = "select time, open, close, high, low from ".$table_name." limit 2700,10";
 		//echo $sql."\n";

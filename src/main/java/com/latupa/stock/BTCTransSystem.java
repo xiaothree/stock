@@ -89,7 +89,7 @@ public class BTCTransSystem {
 	public BTCFunc btc_func = new BTCFunc();
 	
 	//交易策略
-	public BTCTransStrategy2 btc_trans_stra = new BTCTransStrategy2();
+	public BTCTransStrategy3 btc_trans_stra = new BTCTransStrategy3();
 	
 	//底层api
 	public BTCApi btc_api = new BTCApi();
@@ -406,7 +406,7 @@ public class BTCTransSystem {
 		
 		
 		//如果还未入场，则判断是否要入场
-		if (this.btc_trans_stra.curt_status == BTCTransStrategy2.STATUS.READY) {
+		if (this.btc_trans_stra.curt_status == BTCTransStrategy3.STATUS.READY) {
 			
 			int ret = this.btc_trans_stra.IsBuy(sDateTime);
 			if (ret != 0) {
@@ -417,7 +417,7 @@ public class BTCTransSystem {
 			}
 		}
 		//如果已入场，则判断是否要出场
-		else if (this.btc_trans_stra.curt_status != BTCTransStrategy2.STATUS.READY) {
+		else if (this.btc_trans_stra.curt_status != BTCTransStrategy3.STATUS.READY) {
 			
 			//判断是否要出场
 			int sell_position = this.btc_trans_stra.IsSell(sDateTime);
@@ -550,7 +550,6 @@ public class BTCTransSystem {
 					while (true) {
 						this.btc_data.BTCDataLoadFromDB(20);
 						if (!this.btc_data.b_record_map.containsKey(sDateTime)) {
-							this.btc_data.b_record_map.clear();
 							log.info("just wait k of " + sDateTime);
 							try {
 								Thread.sleep(1000);
