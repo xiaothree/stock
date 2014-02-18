@@ -46,6 +46,13 @@ import org.apache.commons.logging.LogFactory;
  * 3. 底部两次金叉入场，可否等同于BULL处理，金叉的过期要review[DONE]
  *    A:金叉的过期没有问题，不可简单等同于BULL处理，维持原样不变
  * 4. 底部两次金叉新增一个条件，即两次金叉之间需要突破至少一次boll线中轨（即出现黑洞）[DONE]
+ * 5. 两次金叉的判定：可以考虑一次金叉+macd底（绿线底或者红线变短再变长），必须要有洞？
+ * 
+ * 2014-02-18 多头判定去掉120均线，判定包含"="，增加HALF状态变成多头的的处理[SUCC]  double_cross_test1
+ * 2014-02-18 二次金叉判定增加黑洞，即两次金叉之间要求曾突破过布林线中轨[SUCC]  double_cross_test2
+ * 2014-02-18 二次金叉判定不考虑两次金叉的高低[FAIL]  double_cross_test3
+ * 2014-02-18 二次金叉判定，黑洞改为两次金叉之间要求曾突破bbi[SUCC] double_cross_test4
+ *            备注：对于黑洞选择突破bbi还是布林线中轨，可以根据更多历史数据进行复盘[TODO]
  */
 
 public class BTCTransStrategy3 implements BTCTransStrategy {
@@ -183,18 +190,19 @@ public static final Log log = LogFactory.getLog(BTCTransStrategy3.class);
 		this.curt_price	= record.close;
 		
 		//均线支撑
-		if (record.ma_record.ma5 > record.ma_record.ma10 && 
-				record.ma_record.ma10 > record.ma_record.ma20 &&
-				record.ma_record.ma20 > record.ma_record.ma30) {
+		if (record.ma_record.ma5 >= record.ma_record.ma10 && 
+				record.ma_record.ma10 >= record.ma_record.ma20 &&
+				record.ma_record.ma20 >= record.ma_record.ma30) {
 			this.is_ma_support	= true;
 			//均线多头排列
-			if (record.ma_record.ma30 > record.ma_record.ma60 &&
-					record.ma_record.ma60 > record.ma_record.ma120) {
+			if (record.ma_record.ma30 >= record.ma_record.ma60) {
+//			if (record.ma_record.ma30 > record.ma_record.ma60 &&
+//					record.ma_record.ma60 > record.ma_record.ma120) {
 				this.is_ma_bull_arrange	= true;
 				
-				if (this.curt_status == STATUS.BUYIN) {
+				if (this.curt_status == STATUS.BUYIN || this.curt_status == STATUS.HALF) {
+					log.info("TransProcess: status from " + this.curt_status + " to " + STATUS.BULL);
 					this.curt_status = STATUS.BULL;
-					log.info("TransProcess: status from " + STATUS.BUYIN + " to " + STATUS.BULL);
 				}
 			}
 		}
@@ -232,7 +240,8 @@ public static final Log log = LogFactory.getLog(BTCTransStrategy3.class);
 		
 		//记录是否突破过布林线中轨（即有没有出现洞），为低位二次金叉提供条件
 		if ((this.status_double_cross.is_down_cross == true) &&
-				(record.close > record.boll_record.mid)) {
+//				(record.close > record.boll_record.mid)) {
+				(record.close > record.boll_record.bbi)) {
 			this.status_double_cross.is_up_boll_mid = true;
 		}
 		
@@ -294,29 +303,29 @@ public static final Log log = LogFactory.getLog(BTCTransStrategy3.class);
 		}
 		
 		//均线支撑
-		if (this.is_ma_support) {
-			if (this.is_macd_up) {
-				ret = CONTIDION_MA_MACD_UP;
-				is_buy	= true;
-				this.curt_status	= STATUS.BUYIN;
-				log.info("TransProcess: time:" + sDateTime + ", price:" + df1.format(this.curt_price) + ", buy for ma_support && macd_up, status from " + STATUS.READY + " to " + this.curt_status);
-			}
-			
-			if (this.is_boll_up) {
-				ret = CONTIDION_MA_BOLL_UP;
-				is_buy	= true;
-				this.curt_status	= STATUS.BUYIN;
-				log.info("TransProcess: time:" + sDateTime + ", price:" + df1.format(this.curt_price) + ", buy for ma_support && boll_up, status from " + STATUS.READY + " to " + this.curt_status);
-			}
-		}
-		
-		//多重底
-		if (this.is_multi_macd_bottom) {
-			ret = CONTIDION_MULTI_BOTTOM;
-			is_buy	= true;
-			this.curt_status = STATUS.BUYIN;
-			log.info("TransProcess: time:" + sDateTime + ", price:" + df1.format(this.curt_price) + ", buy for multi_macd_bottom, status from " + STATUS.READY + " to " + this.curt_status);
-		}
+//		if (this.is_ma_support) {
+//			if (this.is_macd_up) {
+//				ret = CONTIDION_MA_MACD_UP;
+//				is_buy	= true;
+//				this.curt_status	= STATUS.BUYIN;
+//				log.info("TransProcess: time:" + sDateTime + ", price:" + df1.format(this.curt_price) + ", buy for ma_support && macd_up, status from " + STATUS.READY + " to " + this.curt_status);
+//			}
+//			
+//			if (this.is_boll_up) {
+//				ret = CONTIDION_MA_BOLL_UP;
+//				is_buy	= true;
+//				this.curt_status	= STATUS.BUYIN;
+//				log.info("TransProcess: time:" + sDateTime + ", price:" + df1.format(this.curt_price) + ", buy for ma_support && boll_up, status from " + STATUS.READY + " to " + this.curt_status);
+//			}
+//		}
+//		
+//		//多重底
+//		if (this.is_multi_macd_bottom) {
+//			ret = CONTIDION_MULTI_BOTTOM;
+//			is_buy	= true;
+//			this.curt_status = STATUS.BUYIN;
+//			log.info("TransProcess: time:" + sDateTime + ", price:" + df1.format(this.curt_price) + ", buy for multi_macd_bottom, status from " + STATUS.READY + " to " + this.curt_status);
+//		}
 		
 		if (is_buy) {
 			if (this.is_ma_bull_arrange) {
