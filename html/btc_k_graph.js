@@ -63,6 +63,24 @@
 	}, {
 		fromField: "bbi",
 		toField: "bbi"
+	}, {
+		fromField: "ma5",
+		toField: "ma5"
+	}, {
+		fromField: "ma10",
+		toField: "ma10"
+	}, {
+		fromField: "ma20",
+		toField: "ma20"
+	}, {
+		fromField: "ma30",
+		toField: "ma30"
+	}, {
+		fromField: "ma60",
+		toField: "ma60"
+	}, {
+		fromField: "ma120",
+		toField: "ma120"
 	}];
 	dataSet.color = "#7f8da9";
 	dataSet.dataProvider = chartData;
@@ -74,7 +92,7 @@
 	// K线的控制面板
 	stockPanel = new AmCharts.StockPanel();
 	stockPanel.title = "K lines";
-	stockPanel.percentHeight = 65;
+	stockPanel.percentHeight = 70;
 
 	// graph of first stock panel
 	var graph = new AmCharts.StockGraph();
@@ -161,6 +179,108 @@
 	graph7.useDataSetColors = false;
 	stockPanel.addStockGraph(graph7);
 
+	// ma ma5 graph
+	var graph8 = new AmCharts.StockGraph();
+	graph8.type = "line";
+	graph8.valueField = "ma5";
+	graph8.lineColor = "#FFFFFF";
+	graph8.lineThickness = 1;
+	graph8.fillColors = "#FFFFFF";
+	graph8.showBalloon = false;
+	//graph8.balloonText = "diff:<b>[[diff]]</b>";
+	graph8.legendAlpha = 1;
+	graph8.legendColor = "#FFFFFF";
+	graph8.visibleInLegend = true;
+	graph8.legendValueText = "ma5:[[ma5]]";
+	graph8.useDataSetColors = false;
+	stockPanel.addStockGraph(graph8);
+	stockPanel.hideGraph(graph8);
+
+	// ma ma10 graph
+	var graph9 = new AmCharts.StockGraph();
+	graph9.type = "line";
+	graph9.valueField = "ma10";
+	graph9.lineColor = "#FCF930";
+	graph9.lineThickness = 1;
+	graph9.fillColors = "#FCF930";
+	graph9.showBalloon = false;
+	//graph8.balloonText = "diff:<b>[[diff]]</b>";
+	graph9.legendAlpha = 1;
+	graph9.legendColor = "#FCF930";
+	graph9.visibleInLegend = true;
+	graph9.legendValueText = "ma10:[[ma10]]";
+	graph9.useDataSetColors = false;
+	stockPanel.addStockGraph(graph9);
+	stockPanel.hideGraph(graph9);
+
+	// ma ma20 graph
+	var graph10 = new AmCharts.StockGraph();
+	graph10.type = "line";
+	graph10.valueField = "ma20";
+	graph10.lineColor = "#E60CD4";
+	graph10.lineThickness = 1;
+	graph10.fillColors = "#E60CD4";
+	graph10.showBalloon = false;
+	//graph8.balloonText = "diff:<b>[[diff]]</b>";
+	graph10.legendAlpha = 1;
+	graph10.legendColor = "#E60CD4";
+	graph10.visibleInLegend = true;
+	graph10.legendValueText = "ma20:[[ma20]]";
+	graph10.useDataSetColors = false;
+	stockPanel.addStockGraph(graph10);
+	stockPanel.hideGraph(graph10);
+
+	// ma ma30 graph
+	var graph11 = new AmCharts.StockGraph();
+	graph11.type = "line";
+	graph11.valueField = "ma30";
+	graph11.lineColor = "#12EB16";
+	graph11.lineThickness = 1;
+	graph11.fillColors = "#12EB16";
+	graph11.showBalloon = false;
+	//graph8.balloonText = "diff:<b>[[diff]]</b>";
+	graph11.legendAlpha = 1;
+	graph11.legendColor = "#12EB16";
+	graph11.visibleInLegend = true;
+	graph11.legendValueText = "ma30:[[ma30]]";
+	graph11.useDataSetColors = false;
+	stockPanel.addStockGraph(graph11);
+	stockPanel.hideGraph(graph11);
+
+	// ma ma60 graph
+	var graph12 = new AmCharts.StockGraph();
+	graph12.type = "line";
+	graph12.valueField = "ma60";
+	graph12.lineColor = "#FFFFFF";
+	graph12.lineThickness = 2;
+	graph12.fillColors = "#FFFFFF";
+	graph12.showBalloon = false;
+	//graph8.balloonText = "diff:<b>[[diff]]</b>";
+	graph12.legendAlpha = 1;
+	graph12.legendColor = "#FFFFFF";
+	graph12.visibleInLegend = true;
+	graph12.legendValueText = "ma60:[[ma60]]";
+	graph12.useDataSetColors = false;
+	stockPanel.addStockGraph(graph12);
+	stockPanel.hideGraph(graph12);
+
+	// ma ma120 graph
+	var graph13 = new AmCharts.StockGraph();
+	graph13.type = "line";
+	graph13.valueField = "ma120";
+	graph13.lineColor = "#0033FF";
+	graph13.lineThickness = 1;
+	graph13.fillColors = "#0033FF";
+	graph13.showBalloon = false;
+	//graph8.balloonText = "diff:<b>[[diff]]</b>";
+	graph13.legendAlpha = 1;
+	graph13.legendColor = "#0033FF";
+	graph13.visibleInLegend = true;
+	graph13.legendValueText = "ma120:[[ma120]]";
+	graph13.useDataSetColors = false;
+	stockPanel.addStockGraph(graph13);
+	stockPanel.hideGraph(graph13);
+
 	var stockLegend = new AmCharts.StockLegend();
 	stockLegend.markerType = "none";
 	stockLegend.markerSize = 0;
@@ -173,7 +293,7 @@
 	// MACD的控制面板
 	newstockPanel = new AmCharts.StockPanel();
 	newstockPanel.title = "MACD";
-	newstockPanel.percentHeight = 35;
+	newstockPanel.percentHeight = 30;
 
 	var newstockLegend = new AmCharts.StockLegend();
 	newstockLegend.markerType = "none";
@@ -290,7 +410,7 @@
 	for(var i=0;i<obj.length;i++) {  
 		count++;
 		if (count % 100 == 0) {
-			alert(count);
+			//alert(count);
 		}
 		var time = obj[i].time;
 		var open = obj[i].open;
@@ -304,6 +424,12 @@
 		var mid  = obj[i].mid;
 		var lower= obj[i].lower;
 		var bbi  = obj[i].bbi;
+		var ma5  = obj[i].ma5;
+		var ma10 = obj[i].ma10;
+		var ma20 = obj[i].ma20;
+		var ma30 = obj[i].ma30;
+		var ma60 = obj[i].ma60;
+		var ma120= obj[i].ma120;
 
 		var items = time.split(" ");
 		var time_day  = items[0];
@@ -328,10 +454,16 @@
 		upper: upper,
 		mid: mid, 
 		lower: lower, 
-		bbi: bbi
+		bbi: bbi,
+		ma5: ma5,
+		ma10: ma10,
+		ma20: ma20,
+		ma30: ma30,
+		ma60: ma60,
+		ma120: ma120
 		});
 	}  
-	alert(count);
+	//alert(count);
     }
 
     // this method is called when chart is first inited as we listen for "dataUpdated" event

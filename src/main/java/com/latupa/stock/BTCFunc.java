@@ -232,16 +232,17 @@ public class BTCFunc {
 	 * MACD计算公式
 	 * y=ema(x,n), y=[2*x+(n-1)y']/(n+1),其中y'表示上一周期y的值
 	 * @param btc_data 数据
+	 * @param p_time 指定某个时间的macd
 	 * @return
 	 * @throws ParseException
 	 */
-	public MacdRet macd(BTCData btc_data) throws ParseException {
+	public MacdRet macd(BTCData btc_data, String p_time) throws ParseException {
 		int p_short = 13;
 		int p_long = 26;
 		int p_m = 9;
 		
-		BTCTotalRecord record	= btc_data.BTCRecordOptGetByCycle(0);
-		BTCTotalRecord record_1cycle_before	= btc_data.BTCRecordOptGetByCycle(1);
+		BTCTotalRecord record	= btc_data.BTCRecordOptGetByCycle(0, p_time);
+		BTCTotalRecord record_1cycle_before	= btc_data.BTCRecordOptGetByCycle(1, p_time);
 		
 		double ema13;
 		double ema26;

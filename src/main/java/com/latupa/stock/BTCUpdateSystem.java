@@ -33,6 +33,10 @@ public class BTCUpdateSystem {
 			BTCData btc_data = this.data_map.get(data_cycle);
 			
 			BTCDataProcThread data_proc_thread = new BTCDataProcThread(btc_data, data_cycle);
+			//加载数据库中的历史数据到内存中
+			log.info("load data from db for cycle " + data_cycle);
+			data_proc_thread.btc_data.BTCDataLoadFromDB(300, null);
+			log.info("load finish");
 			data_proc_thread.start();
 		}
 	}

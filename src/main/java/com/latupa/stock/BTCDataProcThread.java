@@ -8,6 +8,8 @@ import java.util.Date;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.latupa.stock.BTCTransSystem.MODE;
+
 /**
  * 针对抓取到的数据构造K线，同时计算指标值，更新到内存和数据库中
  * @author latupa
@@ -24,11 +26,31 @@ public class BTCDataProcThread extends Thread {
 	public BTCDataProcThread(BTCData btc_data, int data_cycle) {
 		this.btc_data	= btc_data;
 		this.data_cycle	= data_cycle;
-		
+	}
+	
+	/**
+	 * 补历史数据用
+	 * @param time_s 起始时间
+	 * @param time_s 结束时间
+	 */
+	public void ModifyHistoryData(String time_s, String time_e) {
 		//加载数据库中的历史数据到内存中
 		log.info("load data from db for cycle " + this.data_cycle);
-		this.btc_data.BTCDataLoadFromDB(0);
+		this.btc_data.BTCDataLoadFromDB(0, null);
 		log.info("load finish");
+		
+		for (String time : this.btc_data.b_record_map.keySet().toArray(new String[0])) {
+			if (time.compareTo(time_s) >= 0 && time.compareTo(time_e) <= 0) {
+				log.info("proc " + time);
+				CalcFunc(time);
+			}
+			
+			if (time.compareTo(time_e) > 0) {
+				break;
+			}
+		}
+		
+		log.info("modify finish");
 	}
 	
 	/**
@@ -36,12 +58,6 @@ public class BTCDataProcThread extends Thread {
 	 * @param sDateTime
 	 */
 	private void CalcFunc(String sDateTime) {
-		
-		//更新基础数值
-		this.btc_data.BTCRecordMemInsert(sDateTime);
-		this.btc_data.BTCRecordDBInsert(sDateTime);
-		this.btc_data.BTCSliceRecordInit();
-		//this.btc_trans_sys.btc_data.BTCRecordMemShow();
 		
 		//计算均线
 		MaRet ma_ret = this.btc_data.BTCCalcMa(this.btc_func, sDateTime);
@@ -123,6 +139,12 @@ public class BTCDataProcThread extends Thread {
 					Date cur_date = new Date(stamp_millis);
 					String sDateTime = df.format(cur_date); 
 					
+					//更新基础数值
+					this.btc_data.BTCRecordMemInsert(sDateTime);
+					this.btc_data.BTCRecordDBInsert(sDateTime);
+					this.btc_data.BTCSliceRecordInit();
+					//this.btc_trans_sys.btc_data.BTCRecordMemShow();
+					
 					CalcFunc(sDateTime);
 				}
 			}
@@ -143,7 +165,23 @@ public class BTCDataProcThread extends Thread {
 	 */
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
-
+		
+		//处理更新历史数据
+		if (args.length != 3) {
+			System.out.println("usage: time_s(yyyymmddHHMMSS) time_e(yyyymmddHHMMSS) data_cycle");
+			System.exit(0);
+		}
+		
+		String time_s = args[0];
+		String time_e = args[1];
+		int data_cycle = Integer.parseInt(args[2]);
+		
+		System.out.println("time_s:" + time_s + ", time_e:" + time_e + ", data_cycle:" + data_cycle);
+		
+		BTCData btc_data = new BTCData(data_cycle);
+		BTCDataProcThread btc_data_proc = new BTCDataProcThread(btc_data, data_cycle);
+		btc_data_proc.ModifyHistoryData(time_s, time_e);
+		
 	}
 
 }

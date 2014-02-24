@@ -175,13 +175,18 @@ public class BTCData {
 	/**
 	 * 对BTCTotalRecord映射表的操作：获取指定周期的record
 	 * @param cycle 1表示1个周期前record，以此类推，0表示当前最新周期record
+	 * @param p_time 指定某个时间点，如果为null，则表示当前
 	 * @return
 	 */
-	public BTCTotalRecord BTCRecordOptGetByCycle(int cycle) {
+	public BTCTotalRecord BTCRecordOptGetByCycle(int cycle, String p_time) {
 		
 		BTCTotalRecord last_record = null;
 		
-		for (String time : this.b_record_map.descendingKeySet().toArray(new String[0])) {
+		if (p_time == null) {
+			p_time = "99991231235959";
+		}
+		
+		for (String time : this.b_record_map.headMap(p_time, true).descendingKeySet().toArray(new String[0])) {
 			last_record	= this.b_record_map.get(time);
 			if (cycle == 0) {
 				return last_record;
@@ -216,13 +221,18 @@ public class BTCData {
 	/**
 	 * 从数据库加载历史数据
 	 * @param last_days 最近天数的数据，如果为0，则表示加载所有
+	 * @param time_s 起始时间，如果为null，则表示从当前时间往前加载
 	 */
-	public void BTCDataLoadFromDB(int last_days) {
+	public void BTCDataLoadFromDB(int last_days, String time_s) {
 		log.info("load history data from db(" + this.data_cycle + ") for " + last_days + " days");
 		
 		this.b_record_map.clear();
 		
 		String sql = "select floor(time + 0) as time, open, close, high, low, ma5, ma10, ma20, ma30, ma60, ma120, upper, mid, lower, bbi, ema13, ema26, diff, dea, macd from  " + BTC_PRICE_TABLE + "__" + this.data_cycle;
+		if (time_s != null) {
+			sql += " where time < '" + time_s + "'";
+		}
+		
 		if (last_days != 0) {
 			sql += " order by time desc limit " + last_days;
 		}
@@ -371,7 +381,7 @@ public class BTCData {
 	 * @throws ParseException 
 	 */
 	public MacdRet BTCCalcMacd(BTCFunc btc_func, String time, int cycle_data) throws ParseException {
-		return btc_func.macd(this);
+		return btc_func.macd(this, time);
 	}
 	
 	/**

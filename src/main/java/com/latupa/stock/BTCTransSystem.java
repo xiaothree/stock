@@ -402,7 +402,7 @@ public class BTCTransSystem {
 		this.btc_trans_stra.InitPoint();
 		this.btc_trans_stra.CheckPoint(this.btc_data);
 		
-		BTCTotalRecord record	= this.btc_data.BTCRecordOptGetByCycle(0);
+		BTCTotalRecord record	= this.btc_data.BTCRecordOptGetByCycle(0, null);
 		
 		
 		//如果还未入场，则判断是否要入场
@@ -548,7 +548,7 @@ public class BTCTransSystem {
 					String sDateTime = df.format(cur_date); 
 					
 					while (true) {
-						this.btc_data.BTCDataLoadFromDB(20);
+						this.btc_data.BTCDataLoadFromDB(20, null);
 						if (!this.btc_data.b_record_map.containsKey(sDateTime)) {
 							log.info("just wait k of " + sDateTime);
 							try {
