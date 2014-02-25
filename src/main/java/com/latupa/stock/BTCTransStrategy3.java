@@ -48,15 +48,15 @@ import org.apache.commons.logging.LogFactory;
  * 4. 底部两次金叉新增一个条件，即两次金叉之间需要突破至少一次boll线中轨（即出现黑洞）[DONE]
  * 5. 两次金叉的判定：可以考虑一次金叉+macd底（绿线底或者红线变短再变长），必须要有洞？
  * 
- * [1][SUCC] 2014-02-18 多头判定去掉120均线，判定包含"="，增加HALF状态变成多头的的处理  double_cross_test1
+ * [1][SUCC] 2014-02-18 多头判定去掉120均线，判定包含"=" double_cross_test1
  * [2][SUCC] 2014-02-18 二次金叉判定增加黑洞，即两次金叉之间要求曾突破过布林线中轨  double_cross_test2
  * [3][FAIL] 2014-02-18 二次金叉判定不考虑两次金叉的高低  double_cross_test3
  * [4][SUCC] 2014-02-18 二次金叉判定，黑洞改为两次金叉之间要求曾突破BBI double_cross_test4
  *    [TODO]     备注：对于黑洞选择突破bbi还是布林线中轨，可以根据更多历史数据进行复盘
  * [5][FAIL] 2014-02-19 对[4]进行10分钟周期的复盘 double_cross_test5
- * [6][FAIL] 2014-02-24 对[4]进行突破BBI的尝试，用high来替代close
+ * [6][FAIL] 2014-02-24 对[4]进行突破BBI的尝试，用high来替代close double_cross_test6
  * [7][TODO] 2014-02-24 2月1日连续的金叉死叉，能否避免
- * [8][TODO] 2014-02-24 对于二次金叉入场的，出场忽略跌破BBI
+ * [8][TODO] 2014-02-24 对于二次金叉入场的，出场忽略跌破BBI double_cross_test7
  * 
  * 
  */
@@ -177,6 +177,7 @@ public static final Log log = LogFactory.getLog(BTCTransStrategy3.class);
 	public boolean is_boll_up	= false;
 	public boolean is_boll_bbi_down	= false;
 	public boolean is_boll_mid_down	= false;
+	public boolean is_boll_bbi_or_mid_down = false;
 	
 	//macd顶、底
 	public boolean is_macd_top		= false;	//macd>0 顶
@@ -206,7 +207,7 @@ public static final Log log = LogFactory.getLog(BTCTransStrategy3.class);
 //					record.ma_record.ma60 > record.ma_record.ma120) {
 				this.is_ma_bull_arrange	= true;
 				
-				if (this.curt_status == STATUS.BUYIN || this.curt_status == STATUS.HALF) {
+				if (this.curt_status == STATUS.BUYIN) {
 					log.info("TransProcess: status from " + this.curt_status + " to " + STATUS.BULL);
 					this.curt_status = STATUS.BULL;
 				}
@@ -292,6 +293,15 @@ public static final Log log = LogFactory.getLog(BTCTransStrategy3.class);
 		if (record.close < record.boll_record.mid) {
 			this.is_boll_mid_down	= true;
 		}
+		
+		//跌破bbi和布林线中轨的低点
+		if (((record.boll_record.mid < record.boll_record.bbi) && (record.close < record.boll_record.mid)) ||
+				((record.boll_record.bbi < record.boll_record.mid) && (record.close < record.boll_record.bbi))) {
+			this.is_boll_bbi_or_mid_down = true;
+		}
+		
+		
+		
 	}
 	
 	public int IsBuy(String sDateTime) {
@@ -387,9 +397,15 @@ public static final Log log = LogFactory.getLog(BTCTransStrategy3.class);
 				return 10;
 			}
 			
-			if (this.is_boll_bbi_down) {
+//			if (this.is_boll_bbi_down) {
+//				this.curt_status	= STATUS.READY;
+//				log.info("TransProcess: time:" + sDateTime + ", price:" + df1.format(this.curt_price) + ", sell for bbi_down in half, status from " + STATUS.HALF + " to " + STATUS.READY);
+//				return 10;
+//			}
+		
+			if (this.is_boll_bbi_or_mid_down) {
 				this.curt_status	= STATUS.READY;
-				log.info("TransProcess: time:" + sDateTime + ", price:" + df1.format(this.curt_price) + ", sell for bbi_down in half, status from " + STATUS.HALF + " to " + STATUS.READY);
+				log.info("TransProcess: time:" + sDateTime + ", price:" + df1.format(this.curt_price) + ", sell for bbi_or_mid_down in half, status from " + STATUS.HALF + " to " + STATUS.READY);
 				return 10;
 			}
 			
@@ -432,6 +448,7 @@ public static final Log log = LogFactory.getLog(BTCTransStrategy3.class);
 		is_boll_up	= false;
 		is_boll_bbi_down	= false;
 		is_boll_mid_down	= false;
+		is_boll_bbi_or_mid_down = false;
 		
 		//macd顶、底
 		is_macd_top		= false;	//macd>0 顶
