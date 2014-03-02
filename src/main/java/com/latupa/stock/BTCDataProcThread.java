@@ -78,6 +78,8 @@ public class BTCDataProcThread extends Thread {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		
+		this.btc_data.BTCDBComplete(sDateTime);
 	}
 	
 	public void run() {

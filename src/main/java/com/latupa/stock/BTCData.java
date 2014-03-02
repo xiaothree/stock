@@ -238,7 +238,7 @@ public class BTCData {
 		
 		this.b_record_map.clear();
 		
-		String sql = "select floor(time + 0) as time, open, close, high, low, ma5, ma10, ma20, ma30, ma60, ma120, upper, mid, lower, bbi, ema13, ema26, diff, dea, macd from  " + BTC_PRICE_TABLE + "__" + this.data_cycle;
+		String sql = "select floor(time + 0) as time, open, close, high, low, ma5, ma10, ma20, ma30, ma60, ma120, upper, mid, lower, bbi, ema13, ema26, diff, dea, macd from  " + BTC_PRICE_TABLE + "__" + this.data_cycle + " where data_complete = 1";
 		if (time_s != null) {
 			sql += " where time < '" + time_s + "'";
 		}
@@ -371,6 +371,25 @@ public class BTCData {
 					"diff=" + record.macd_record.diff + ", " +
 					"dea=" + record.macd_record.dea + ", " +
 					"macd=" + record.macd_record.macd + 
+					" where time = '" + time + "'";
+			
+			dbInst.updateSQL(sql);
+		}
+		else {
+			log.error("time " + time + "is not in db");
+			System.exit(1);
+		}
+	}
+	
+	/**
+	 * 数据库记录更新完成
+	 * @param time
+	 */
+	public void BTCDBComplete(String time) {
+		if (this.b_record_map.containsKey(time)) {
+			
+			String sql = "update " + BTC_PRICE_TABLE + "__" + this.data_cycle + " set " +
+					"data_complete=1" + 
 					" where time = '" + time + "'";
 			
 			dbInst.updateSQL(sql);
