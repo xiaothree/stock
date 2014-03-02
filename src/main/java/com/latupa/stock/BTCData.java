@@ -69,6 +69,16 @@ class BTCTotalRecord extends BTCBasicRecord {
 	public BTCTotalRecord() {
 		
 	}
+	
+	public String toString() {
+		String str = "TotalRecord {" + 
+				"BasicRecord { " + "high:" + this.high + ", low:" + this.low + ", open:" + this.open + ", close:" + this.close + "}, " +
+				"MaRet {" + "ma5:" + this.ma_record.ma5 + ", ma10:" + this.ma_record.ma10 + ", ma20:" + this.ma_record.ma20 + ", ma30:" + this.ma_record.ma30 + ", ma60:" + this.ma_record.ma60 + ", ma120:" + this.ma_record.ma120 + "}, " +
+				"BollRet {" + "upper:" + this.boll_record.upper + ", mid:" + this.boll_record.mid + ", lower:" + this.boll_record.lower + ", bbi:" + this.boll_record.bbi + "}, " +
+				"MACDRet {" + "diff:" + this.macd_record.diff + ", dea:" + this.macd_record.dea + ", macd:" + this.macd_record.macd + "}" +
+				"}";
+		return str;
+	}
 }
 	
 /**

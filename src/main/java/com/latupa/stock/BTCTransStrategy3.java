@@ -56,9 +56,9 @@ import org.apache.commons.logging.LogFactory;
  * [5][FAIL] 2014-02-19 对[4]进行10分钟周期的复盘 double_cross_test5
  * [6][FAIL] 2014-02-24 对[4]进行突破BBI的尝试，用high来替代close double_cross_test6
  * [7][TODO] 2014-02-24 2月1日连续的金叉死叉，能否避免
- * [8][TODO] 2014-02-24 对于二次金叉入场的，出场忽略跌破BBI double_cross_test7
- * 
- * 
+ * [8][SUCC] 2014-02-24 对于二次金叉入场的，HALF出场时候选bbi或者中轨低者 double_cross_test7
+ * [9][SUCC] 2014-03-02 均线支撑，macdup效果不如boll贴上轨好，暂时把macdup去掉 bollup_only
+ *    [TODO]     备注：对于是否需要macdup，可以根据更多历史数据进行复盘
  */
 
 public class BTCTransStrategy3 implements BTCTransStrategy {
@@ -98,6 +98,13 @@ public static final Log log = LogFactory.getLog(BTCTransStrategy3.class);
 			this.is_up_boll_mid	= false;
 			this.down_cross_value	= 0;
 		}
+		
+		public String toString() {
+			String str = "DoubleCross { is_down_cross:" + this.is_down_cross + 
+					", down_cross_value:" + this.down_cross_value +
+					", is_up_boll_mid:" + this.is_up_boll_mid + "}";
+			return str;
+		}
 	}
 	public StatusDoubleCross status_double_cross = new StatusDoubleCross();
 	
@@ -114,6 +121,12 @@ public static final Log log = LogFactory.getLog(BTCTransStrategy3.class);
 		public void Init() {
 			this.down_macd_count	= 0;
 			this.is_boll_lower		= false;
+		}
+		
+		public String toString() {
+			String str = "MultiBottom { down_macd_count:" + this.down_macd_count + 
+					", is_boll_lower:" + this.is_boll_lower + "}";
+			return str;
 		}
 		
 		public boolean IsMultiBottom(BTCData btc_data) {
@@ -188,6 +201,25 @@ public static final Log log = LogFactory.getLog(BTCTransStrategy3.class);
 	public BTCTransStrategy3() {
 	}
 	
+	public String toString() {
+		String str = this.status_multi_bottom.toString() + ", " + 
+				this.status_double_cross.toString() + ", " +
+				"is_double_gold_cross:" + this.is_double_gold_cross + ", " +
+				"is_multi_macd_bottom:" + this.is_multi_macd_bottom + ", " +
+				"is_dead_cross:" + this.is_dead_cross + ", " +
+				"is_ma_support:" + this.is_ma_support + ", " +
+				"is_ma_bull_arrange:" + this.is_ma_bull_arrange + ", " +
+				"is_boll_up:" + this.is_boll_up + ", " +
+				"is_boll_bbi_down:" + this.is_boll_bbi_down + ", " +
+				"is_boll_mid_down:" + this.is_boll_mid_down + ", " +
+				"is_boll_bbi_or_mid_down:" + this.is_boll_bbi_or_mid_down + ", " +
+				"is_macd_top:" + this.is_macd_top + ", " +
+				"is_macd_bottom:" + this.is_macd_bottom + ", " +
+				"is_macd_up:" + this.is_macd_up + ", " +
+				"is_macd_down:" + this.is_macd_down;
+		return str;
+	}
+	
 	public void CheckPoint(BTCData btc_data) {
 		
 		BTCTotalRecord record	= btc_data.BTCRecordOptGetByCycle(0, null);
@@ -195,6 +227,10 @@ public static final Log log = LogFactory.getLog(BTCTransStrategy3.class);
 		BTCTotalRecord record_2cycle_before	= btc_data.BTCRecordOptGetByCycle(2, null);
 		
 		this.curt_price	= record.close;
+		
+		log.info("record:" + record.toString());
+		log.info("record1:" + record_1cycle_before.toString());
+		log.info("record2:" + record_2cycle_before.toString());
 		
 		//均线支撑
 		if (record.ma_record.ma5 >= record.ma_record.ma10 && 
@@ -300,9 +336,10 @@ public static final Log log = LogFactory.getLog(BTCTransStrategy3.class);
 			this.is_boll_bbi_or_mid_down = true;
 		}
 		
-		
-		
+		log.info("checkpoint:" + this.toString());
 	}
+	
+	
 	
 	public int IsBuy(String sDateTime) {
 		
@@ -319,21 +356,21 @@ public static final Log log = LogFactory.getLog(BTCTransStrategy3.class);
 		}
 		
 		//均线支撑
-//		if (this.is_ma_support) {
+		if (this.is_ma_support) {
 //			if (this.is_macd_up) {
 //				ret = CONTIDION_MA_MACD_UP;
 //				is_buy	= true;
 //				this.curt_status	= STATUS.BUYIN;
 //				log.info("TransProcess: time:" + sDateTime + ", price:" + df1.format(this.curt_price) + ", buy for ma_support && macd_up, status from " + STATUS.READY + " to " + this.curt_status);
 //			}
-//			
-//			if (this.is_boll_up) {
-//				ret = CONTIDION_MA_BOLL_UP;
-//				is_buy	= true;
-//				this.curt_status	= STATUS.BUYIN;
-//				log.info("TransProcess: time:" + sDateTime + ", price:" + df1.format(this.curt_price) + ", buy for ma_support && boll_up, status from " + STATUS.READY + " to " + this.curt_status);
-//			}
-//		}
+			
+			if (this.is_boll_up) {
+				ret = CONTIDION_MA_BOLL_UP;
+				is_buy	= true;
+				this.curt_status	= STATUS.BUYIN;
+				log.info("TransProcess: time:" + sDateTime + ", price:" + df1.format(this.curt_price) + ", buy for ma_support && boll_up, status from " + STATUS.READY + " to " + this.curt_status);
+			}
+		}
 //		
 //		//多重底
 //		if (this.is_multi_macd_bottom) {
