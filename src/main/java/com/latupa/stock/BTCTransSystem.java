@@ -30,6 +30,8 @@ public class BTCTransSystem {
 		ACTUAL;	//实盘
 	};
 	public MODE mode;
+	public String review_time_s; //复盘的起始时间
+	public String review_time_e; //复盘的结束时间
 	
 	public enum OPT {
 		BUY,
@@ -102,9 +104,11 @@ public class BTCTransSystem {
 	
 	public String btc_trans_postfix;
 	
-	public BTCTransSystem(int data_cycle, MODE mode, String context) {
+	public BTCTransSystem(int data_cycle, MODE mode, String context, String time_s, String time_e) {
 		this.data_cycle	= data_cycle;
 		this.mode		= mode;
+		this.review_time_s	= time_s;
+		this.review_time_e	= time_e;
 		this.btc_data	= new BTCData(this.data_cycle);
 		this.btc_trans_rec	= new BTCTransRecord(this.btc_data.dbInst);
 		
@@ -497,7 +501,7 @@ public class BTCTransSystem {
 			log.info("start by mock src");
 			
 			//从数据库mock数值的初始化
-			this.btc_data.BTCMockInit();
+			this.btc_data.BTCMockInit(this.review_time_s, this.review_time_e);
 			
 			//每次mock一条
 			while (this.btc_data.btc_mock_it.hasNext()) {
@@ -586,13 +590,25 @@ public class BTCTransSystem {
 	 */
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
+		
+		//K线周期，运行模式， 标识（只有复盘有用），[复盘起始时间]， [复盘结束时间]
 		int data_cycle = Integer.parseInt(args[0]);
 		MODE mode = MODE.values()[Integer.parseInt(args[1])];//0-REVIEW;1-ACTUAL
 		String context = args[2];
 		
-		System.out.println("para:" + data_cycle + "," + mode + "," + context);
+		String time_s = null;
+		String time_e = null;
+		if (args.length >= 4) {
+			time_s = args[3];
+		}
 		
-		BTCTransSystem btc_ts = new BTCTransSystem(data_cycle, mode, context);
+		if (args.length >= 5) {
+			time_e = args[4];
+		}
+		
+		System.out.println("para:" + data_cycle + "," + mode + "," + context + "," + time_s + "," + time_e);
+		
+		BTCTransSystem btc_ts = new BTCTransSystem(data_cycle, mode, context, time_s, time_e);
 		btc_ts.Route();
 	}
 }
