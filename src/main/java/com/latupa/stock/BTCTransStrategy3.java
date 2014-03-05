@@ -59,6 +59,8 @@ import org.apache.commons.logging.LogFactory;
  * [8][SUCC] 2014-02-24 对于二次金叉入场的，HALF出场时候选bbi或者中轨低者 double_cross_test7
  * [9][SUCC] 2014-03-02 均线支撑，macdup效果不如boll贴上轨好，暂时把macdup去掉 bollup_only
  *    [TODO]     备注：对于是否需要macdup，可以根据更多历史数据进行复盘
+ *[10][SUCC] 2014-03-05 二次金叉，后一次采用macd模拟准二次 double_cross_test8
+ *    [TODO]     备注：最终受益有所提升，但是入场率太高了，暂不使用
  */
 
 public class BTCTransStrategy3 implements BTCTransStrategy {
@@ -231,16 +233,18 @@ public static final Log log = LogFactory.getLog(BTCTransStrategy3.class);
 		log.info("record:" + record.toString());
 		log.info("record1:" + record_1cycle_before.toString());
 		log.info("record2:" + record_2cycle_before.toString());
+		log.info("record5:" + record_2cycle_before.toString());
 		
 		//均线支撑
 		if (record.ma_record.ma5 >= record.ma_record.ma10 && 
-				record.ma_record.ma10 >= record.ma_record.ma20 &&
-				record.ma_record.ma20 >= record.ma_record.ma30) {
+				record.ma_record.ma10 >= record.ma_record.ma20) {
+//				record.ma_record.ma10 >= record.ma_record.ma20 &&
+//				record.ma_record.ma20 >= record.ma_record.ma30) {
 			this.is_ma_support	= true;
 			//均线多头排列
-			if (record.ma_record.ma30 >= record.ma_record.ma60) {
-//			if (record.ma_record.ma30 > record.ma_record.ma60 &&
-//					record.ma_record.ma60 > record.ma_record.ma120) {
+//			if (record.ma_record.ma30 >= record.ma_record.ma60) {
+			if (record.ma_record.ma20 > record.ma_record.ma30 &&
+					record.ma_record.ma30 > record.ma_record.ma60) {
 				this.is_ma_bull_arrange	= true;
 				
 				if (this.curt_status == STATUS.BUYIN) {
@@ -253,6 +257,33 @@ public static final Log log = LogFactory.getLog(BTCTransStrategy3.class);
 		//贴上轨
 		if (record.close > record.boll_record.upper) {
 			this.is_boll_up	= true;
+		}
+		
+		if (record.macd_record.macd < 0) {
+			//macd绿线变长
+			if (record_2cycle_before.macd_record.macd <= record_1cycle_before.macd_record.macd &&
+					record.macd_record.macd < record_1cycle_before.macd_record.macd) {
+				is_macd_down = true;
+			}
+			
+			//macd绿线变短
+			if (record_2cycle_before.macd_record.macd >= record_1cycle_before.macd_record.macd &&
+					record.macd_record.macd > record_1cycle_before.macd_record.macd) {
+				is_macd_bottom = true;
+			}
+		}
+		
+		if (record.macd_record.macd > 0) {
+			//macd红线变短再变长
+			if (record_2cycle_before.macd_record.macd >= record_1cycle_before.macd_record.macd &&
+					record.macd_record.macd > record_1cycle_before.macd_record.macd) {
+				this.is_macd_up	= true;
+			}
+			//macd顶
+			else if (record_2cycle_before.macd_record.macd <= record_1cycle_before.macd_record.macd &&
+					record.macd_record.macd < record_1cycle_before.macd_record.macd) {
+				this.is_macd_top = true;
+			}
 		}
 		
 		//死叉
@@ -293,32 +324,7 @@ public static final Log log = LogFactory.getLog(BTCTransStrategy3.class);
 			this.is_multi_macd_bottom = true;
 		}
 		
-		if (record.macd_record.macd < 0) {
-			//macd绿线变长
-			if (record_2cycle_before.macd_record.macd <= record_1cycle_before.macd_record.macd &&
-					record.macd_record.macd < record_1cycle_before.macd_record.macd) {
-				is_macd_down = true;
-			}
-			
-			//macd绿线变短
-			if (record_2cycle_before.macd_record.macd >= record_1cycle_before.macd_record.macd &&
-					record.macd_record.macd > record_1cycle_before.macd_record.macd) {
-				is_macd_bottom = true;
-			}
-		}
 		
-		if (record.macd_record.macd > 0) {
-			//macd红线变短再变长
-			if (record_2cycle_before.macd_record.macd >= record_1cycle_before.macd_record.macd &&
-					record.macd_record.macd > record_1cycle_before.macd_record.macd) {
-				this.is_macd_up	= true;
-			}
-			//macd顶
-			else if (record_2cycle_before.macd_record.macd <= record_1cycle_before.macd_record.macd &&
-					record.macd_record.macd < record_1cycle_before.macd_record.macd) {
-				this.is_macd_top = true;
-			}
-		}
 		
 		//跌破bbi
 		if (record.close < record.boll_record.bbi) {
