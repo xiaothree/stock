@@ -368,6 +368,7 @@ public class BTCTransSystem {
 					
 					//卖出当前所有仓位
 					TradeRet trade_ret = this.btc_trade_action.DoSell(10);
+					this.btc_trans_stra.curt_status = BTCTransStrategy3.STATUS.READY;
 					if (trade_ret != null) {
 						//获取当前资金
 						UserInfo user_info	= this.btc_api.ApiUserInfo();
