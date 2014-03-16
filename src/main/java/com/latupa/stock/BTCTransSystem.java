@@ -53,7 +53,6 @@ public class BTCTransSystem {
 	//初始资金
 	public final double BTC_INIT_AMOUNT = 10000;
 	
-	public double btc_init_amount;
 	public double btc_curt_amount;
 	
 	public double btc_buy_price;
@@ -71,13 +70,23 @@ public class BTCTransSystem {
 	
 	public String btc_time_buyin;
 	
+	//记录初始信息
+	public String btc_time_init;
+	public double btc_amount_init;
+	public double btc_price_init;
+	
 	//记录每天的收益
-	public String btc_day_time;
+	public String btc_day_time_init;
 	public double btc_day_amount_init;
 	public double btc_day_price_init;
 	
+	//记录每月的收益
+	public String btc_month_time_init;
+	public double btc_month_amount_init;
+	public double btc_month_price_init;
+	
 	//记录每年的收益
-	public String btc_year_time;
+	public String btc_year_time_init;
 	public double btc_year_amount_init;
 	public double btc_year_price_init;
 	
@@ -113,7 +122,7 @@ public class BTCTransSystem {
 		this.btc_trans_rec	= new BTCTransRecord(this.btc_data.dbInst);
 		
 		this.trade_mode	= false;
-		this.btc_init_amount	= this.BTC_INIT_AMOUNT;
+		this.btc_amount_init	= this.BTC_INIT_AMOUNT;
 		this.btc_curt_amount	= this.BTC_INIT_AMOUNT;
 		
 		if (this.mode == MODE.REVIEW) {
@@ -139,11 +148,15 @@ public class BTCTransSystem {
 		this.btc_fee_cost		= 0;
 		this.btc_accumulate_fee_cost	= 0;
 		
-		this.btc_day_time 			= null;
+		this.btc_day_time_init		= null;
 		this.btc_day_amount_init 	= this.BTC_INIT_AMOUNT;
 		this.btc_day_price_init		= 0;
 		
-		this.btc_year_time	= null;
+		this.btc_month_time_init 			= null;
+		this.btc_month_amount_init 	= this.BTC_INIT_AMOUNT;
+		this.btc_month_price_init		= 0;
+		
+		this.btc_year_time_init	= null;
 		this.btc_year_amount_init	= this.BTC_INIT_AMOUNT;
 		this.btc_year_price_init	= 0;
 	}
@@ -217,7 +230,7 @@ public class BTCTransSystem {
 					UserInfo user_info = this.btc_trade_action.DoUserInfo();
 					if (user_info != null) {
 						this.btc_curt_amount = user_info.cny;
-						this.btc_accumulate_profit = this.btc_curt_amount - this.btc_init_amount;
+						this.btc_accumulate_profit = this.btc_curt_amount - this.btc_amount_init;
 						this.btc_profit = this.btc_curt_amount - last_curt_amount;
 					}
 					else {
@@ -249,9 +262,9 @@ public class BTCTransSystem {
 					", btc_price:" + this.btc_buy_price + "->" + this.btc_sell_price + "(" + df1.format((this.btc_sell_price - this.btc_buy_price) / this.btc_buy_price * 100) + "%)" + 
 					", amount:" + df1.format(this.btc_curt_amount) +
 					", profit:" + df1.format(this.btc_profit) + "(" + df1.format(this.btc_profit / last_curt_amount * 100) + "%)" + 
-					", accu profit:" + df1.format(this.btc_accumulate_profit) + "(" + df1.format(this.btc_accumulate_profit / this.btc_init_amount * 100) + "%)" +
+					", accu profit:" + df1.format(this.btc_accumulate_profit) + "(" + df1.format(this.btc_accumulate_profit / this.btc_amount_init * 100) + "%)" +
 					", fee cost:" + df1.format(this.btc_fee_cost) + "(" + df1.format(this.btc_fee_cost / last_curt_amount * 100) + "%)" + 
-					", accu fee cost:" + df1.format(this.btc_accumulate_fee_cost) + "(" + df1.format(this.btc_accumulate_fee_cost / this.btc_init_amount * 100) + "%)" +
+					", accu fee cost:" + df1.format(this.btc_accumulate_fee_cost) + "(" + df1.format(this.btc_accumulate_fee_cost / this.btc_amount_init * 100) + "%)" +
 					", accu times:" + this.btc_trans_count + ", accu succ times:" + this.btc_trans_succ_count + "(" + df1.format((double)this.btc_trans_succ_count / (double)this.btc_trans_count * 100) + "%)");
 			
 			this.btc_profit		= 0;
@@ -338,11 +351,8 @@ public class BTCTransSystem {
 					//获取当前资金
 					UserInfo user_info	= this.btc_api.ApiUserInfo();
 					if (user_info != null) {
-						this.btc_init_amount	= user_info.cny;
+						this.btc_amount_init	= user_info.cny;
 						this.btc_curt_amount	= user_info.cny;
-						
-						this.btc_day_amount_init	= this.btc_init_amount;
-						this.btc_year_amount_init	= this.btc_init_amount;
 					}
 					else {
 						log.info("change failed! get curt real amount failed");
@@ -373,7 +383,7 @@ public class BTCTransSystem {
 						//获取当前资金
 						UserInfo user_info	= this.btc_api.ApiUserInfo();
 						if (user_info != null) {
-							this.btc_init_amount	= user_info.cny;
+							this.btc_amount_init	= user_info.cny;
 							this.btc_curt_amount	= user_info.cny;
 						}
 						else {
@@ -417,7 +427,9 @@ public class BTCTransSystem {
 			if (ret != 0) {
 				this.BuyAction(sDateTime, record.close, ret);
 				
+				RecordForInit(sDateTime, record);
 				RecordForDay(sDateTime, record, OPT.BUY);
+				RecordForMonth(sDateTime, record, OPT.BUY);
 				RecordForYear(sDateTime, record, OPT.BUY);
 			}
 		}
@@ -430,11 +442,26 @@ public class BTCTransSystem {
 			//需要出场
 			if (sell_position > 0) {
 				this.SellAction(sDateTime, record.close, sell_position);
-				this.btc_trans_stra.CleanStatus();
-				
+//				this.btc_trans_stra.CleanStatus();
+			}
+			
+			if (sell_position == 10) {
 				RecordForDay(sDateTime, record, OPT.SELL);
+				RecordForMonth(sDateTime, record, OPT.SELL);
 				RecordForYear(sDateTime, record, OPT.SELL);
 			}
+		}
+	}
+	
+	/**
+	 * 记录初始信息
+	 * @param sDateTime
+	 * @param record
+	 */
+	public void RecordForInit(String sDateTime, BTCTotalRecord record) {
+		if (this.btc_time_init == null) {
+			this.btc_time_init	= sDateTime;
+			this.btc_price_init	= record.close;
 		}
 	}
 	
@@ -450,20 +477,55 @@ public class BTCTransSystem {
 		String curt_day = sDateTime.substring(0, 8);
 		
 		//初始化记录每天的起始信息
-		if (this.btc_day_time == null && opt == OPT.BUY) {
-			this.btc_day_time = sDateTime;
-			this.btc_day_price_init = record.close;
+		if (this.btc_day_time_init == null && opt == OPT.BUY) {
+			this.btc_day_time_init 		= sDateTime;
+			this.btc_day_price_init 	= record.close;
+			this.btc_day_amount_init	= this.btc_amount_init;
 		}
 		//记录每天收益信息
-		else if (!curt_day.equals(this.btc_day_time.substring(0, 8)) && opt == OPT.SELL) {
-			log.info("TransProcess[DAY]: day:" + this.btc_day_time.substring(0, 8) +
-					", time:" + this.btc_day_time + "->" + sDateTime +
+		else if (!curt_day.equals(this.btc_day_time_init.substring(0, 8)) && opt == OPT.SELL) {
+			log.info("TransProcess[DAY]: day:" + this.btc_day_time_init.substring(0, 8) +
+					", time:" + this.btc_day_time_init + "->" + sDateTime +
 					", price:" + df1.format(this.btc_day_price_init) + "->" + df1.format(record.close) + "(" + df1.format((record.close - this.btc_day_price_init) / this.btc_day_price_init * 100) + "%)" +
-					", amount:" + df1.format(this.btc_day_amount_init) + "->" + df1.format(this.btc_curt_amount) + "(" + df1.format((this.btc_curt_amount - this.btc_day_amount_init) / this.btc_day_amount_init * 100) + "%)");
+					", amount:" + df1.format(this.btc_day_amount_init) + "->" + df1.format(this.btc_curt_amount) + "(" + df1.format((this.btc_curt_amount - this.btc_day_amount_init) / this.btc_day_amount_init * 100) + "%)" +
+					", accu price:" + df1.format(this.btc_price_init) + "->" + df1.format(record.close) + "(" + df1.format((record.close - this.btc_price_init) / this.btc_price_init * 100) + "%)" +
+					", accu amount:" + df1.format(this.btc_amount_init) + "->" + df1.format(this.btc_curt_amount) + "(" + df1.format((this.btc_curt_amount - this.btc_amount_init) / this.btc_amount_init * 100) + "%)");
 			
-			this.btc_day_time = sDateTime;
+			this.btc_day_time_init 		= sDateTime;
 			this.btc_day_amount_init	= this.btc_curt_amount;
-			this.btc_day_price_init	= record.close;
+			this.btc_day_price_init		= record.close;
+		}
+	}
+	
+	/**
+	 * 记录月收益
+	 * @param sDateTime
+	 * @param record
+	 */
+	public void RecordForMonth(String sDateTime, BTCTotalRecord record, OPT opt) {
+		
+		DecimalFormat df1 = new DecimalFormat("#0.00");
+		
+		String curt_month = sDateTime.substring(0, 6);
+		
+		//初始化记录每月的起始信息
+		if (this.btc_month_time_init == null && opt == OPT.BUY) {
+			this.btc_month_time_init 		= sDateTime;
+			this.btc_month_price_init 	= record.close;
+			this.btc_month_amount_init	= this.btc_amount_init;
+		}
+		//记录每月收益信息
+		else if (!curt_month.equals(this.btc_month_time_init.substring(0, 6)) && opt == OPT.SELL) {
+			log.info("TransProcess[MONTH]: month:" + this.btc_month_time_init.substring(0, 6) +
+					", time:" + this.btc_month_time_init + "->" + sDateTime +
+					", price:" + df1.format(this.btc_month_price_init) + "->" + df1.format(record.close) + "(" + df1.format((record.close - this.btc_month_price_init) / this.btc_month_price_init * 100) + "%)" +
+					", amount:" + df1.format(this.btc_month_amount_init) + "->" + df1.format(this.btc_curt_amount) + "(" + df1.format((this.btc_curt_amount - this.btc_month_amount_init) / this.btc_month_amount_init * 100) + "%)" +
+					", accu price:" + df1.format(this.btc_price_init) + "->" + df1.format(record.close) + "(" + df1.format((record.close - this.btc_price_init) / this.btc_price_init * 100) + "%)" +
+					", accu amount:" + df1.format(this.btc_amount_init) + "->" + df1.format(this.btc_curt_amount) + "(" + df1.format((this.btc_curt_amount - this.btc_amount_init) / this.btc_amount_init * 100) + "%)");
+			
+			this.btc_month_time_init 	= sDateTime;
+			this.btc_month_amount_init	= this.btc_curt_amount;
+			this.btc_month_price_init	= record.close;
 		}
 	}
 		
@@ -478,18 +540,18 @@ public class BTCTransSystem {
 		DecimalFormat df1 = new DecimalFormat("#0.00");
 		
 		//初始化记录每年信息的起始年
-		if (this.btc_year_time == null && opt == OPT.BUY) {
-			this.btc_year_time = sDateTime;
+		if (this.btc_year_time_init == null && opt == OPT.BUY) {
+			this.btc_year_time_init = sDateTime;
 			this.btc_year_price_init = record.close;
 		}
 		//记录每年年终信息
-		else if (!sDateTime.substring(0, 4).equals(this.btc_year_time.substring(0, 4)) && opt == OPT.SELL) {
-			log.info("TransProcess: year:" + this.btc_year_time.substring(0, 4) +
-					", time:" + this.btc_year_time + "->" + sDateTime + 
+		else if (!sDateTime.substring(0, 4).equals(this.btc_year_time_init.substring(0, 4)) && opt == OPT.SELL) {
+			log.info("TransProcess: year:" + this.btc_year_time_init.substring(0, 4) +
+					", time:" + this.btc_year_time_init + "->" + sDateTime + 
 					", price:" + df1.format(this.btc_year_price_init) + "->" + df1.format(record.close) + "(" + df1.format((record.close - this.btc_year_price_init) / this.btc_year_price_init * 100) + "%)" +
 					", amount:" + df1.format(this.btc_year_amount_init) + "->" + df1.format(this.btc_curt_amount) + "(" + df1.format((this.btc_curt_amount - this.btc_year_amount_init) / this.btc_year_amount_init * 100) + "%)");
 			
-			this.btc_year_time = sDateTime;
+			this.btc_year_time_init = sDateTime;
 			this.btc_year_amount_init	= this.btc_curt_amount;
 			this.btc_year_price_init	= record.close;
 		}
