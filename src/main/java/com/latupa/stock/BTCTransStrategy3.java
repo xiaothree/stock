@@ -451,18 +451,19 @@ public static final Log log = LogFactory.getLog(BTCTransStrategy3.class);
 					sell_position = 5;
 				}
 			}
-//			if (this.buy_reason == CONTIDION_MA_BOLL_UP && 
-//					this.num_first_yin == 1 &&
-//					this.is_up_yin) {
-//				this.curt_status = STATUS.HALF;
-//				log.info("TransProcess: time:" + sDateTime + ", price:" + df1.format(this.curt_price) + ", sell for up yin in bull, status from " + STATUS.BULL + " to " + STATUS.HALF);
-//				sell_position = 5;
-//			}
-//			if (this.buy_reason == CONTIDION_MA_BOLL_UP && this.is_down_yesterday_open) {
-//				this.curt_status = STATUS.HALF;
-//				log.info("TransProcess: time:" + sDateTime + ", price:" + df1.format(this.curt_price) + ", sell for down yesterday open in bull, status from " + STATUS.BULL + " to " + STATUS.HALF);
-//				sell_position = 5;
-//			}
+			if (this.buy_reason == CONTIDION_MA_BOLL_UP && 
+					this.num_first_yin == 1 &&
+					this.is_up_yin) {
+				this.curt_status = STATUS.HALF;
+				log.info("TransProcess: time:" + sDateTime + ", price:" + df1.format(this.curt_price) + ", sell for up yin in bull, status from " + STATUS.BULL + " to " + STATUS.HALF);
+				sell_position = 5;
+			}
+			if (this.buy_reason == CONTIDION_MA_BOLL_UP && 
+					this.is_down_yesterday_open) {
+				this.curt_status = STATUS.HALF;
+				log.info("TransProcess: time:" + sDateTime + ", price:" + df1.format(this.curt_price) + ", sell for down yesterday open in bull, status from " + STATUS.BULL + " to " + STATUS.HALF);
+				sell_position = 5;
+			}
 		}
 		else if (this.curt_status == STATUS.BUYIN) {
 			if (this.is_dead_cross) {
@@ -482,18 +483,19 @@ public static final Log log = LogFactory.getLog(BTCTransStrategy3.class);
 					sell_position = 5;	
 				}
 			}
-//			if (this.buy_reason == CONTIDION_MA_BOLL_UP && 
-//					this.num_first_yin == 1 &&
-//					this.is_up_yin) {
-//				this.curt_status = STATUS.HALF;
-//				log.info("TransProcess: time:" + sDateTime + ", price:" + df1.format(this.curt_price) + ", sell for up yin in buy, status from " + STATUS.BUYIN + " to " + STATUS.HALF);
-//				sell_position = 5;
-//			}
-//			if (this.buy_reason == CONTIDION_MA_BOLL_UP && this.is_down_yesterday_open) {
-//				this.curt_status = STATUS.HALF;
-//				log.info("TransProcess: time:" + sDateTime + ", price:" + df1.format(this.curt_price) + ", sell for down yesterday open in buy, status from " + STATUS.BULL + " to " + STATUS.HALF);
-//				sell_position = 5;
-//			}
+			if (this.buy_reason == CONTIDION_MA_BOLL_UP && 
+					this.num_first_yin == 1 &&
+					this.is_up_yin) {
+				this.curt_status = STATUS.HALF;
+				log.info("TransProcess: time:" + sDateTime + ", price:" + df1.format(this.curt_price) + ", sell for up yin in buy, status from " + STATUS.BUYIN + " to " + STATUS.HALF);
+				sell_position = 5;
+			}
+			if (this.buy_reason == CONTIDION_MA_BOLL_UP && 
+					this.is_down_yesterday_open) {
+				this.curt_status = STATUS.HALF;
+				log.info("TransProcess: time:" + sDateTime + ", price:" + df1.format(this.curt_price) + ", sell for down yesterday open in buy, status from " + STATUS.BULL + " to " + STATUS.HALF);
+				sell_position = 5;
+			}
 		}
 		else if (this.curt_status == STATUS.HALF) {
 			if (this.is_dead_cross) {
