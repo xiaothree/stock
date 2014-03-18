@@ -61,7 +61,9 @@ import org.apache.commons.logging.LogFactory;
  *    [TODO]     备注：对于是否需要macdup，可以根据更多历史数据进行复盘
  *[10][SUCC] 2014-03-05 二次金叉，后一次采用macd模拟准二次 double_cross_test8
  *    [TODO]     备注：最终受益有所提升，但是入场率太高了，暂不使用
- *[11][    ] 2014-03-16 对于T+0，且买卖没有手续费的，关键是提升入场成功率，积累受益，而不应该是受益最大化，例如多头以后的准两次死叉等，应该尽可能锁定受益，即使受益不高
+ *[11][SUCC] 2014-03-16 对于T+0，且买卖没有手续费的，关键是提升入场成功率，积累受益，而不应该是受益最大化，例如多头以后的准两次死叉等，应该尽可能锁定受益，即使受益不高
+ *                      对于贴上轨的入场情况，增加第一个大阴线出场
+ *[12][SUCC] 2014-03-18 新增入场场景，布林线中轨下方，macd红线变长   mid_down_macd_up
  */
 
 public class BTCTransStrategy3 implements BTCTransStrategy {
@@ -75,10 +77,11 @@ public static final Log log = LogFactory.getLog(BTCTransStrategy3.class);
 		HALF;	//半仓
 	};
 	
-	public final static int CONTIDION_MULTI_BOTTOM	= 0x1;  //多重底
-	public final static int CONTIDION_DOUBLE_CROSS	= 0x2;  //两次金叉
-	public final static int CONTIDION_MA_MACD_UP	= 0x4;  //均线支撑&&macd红线变长
-	public final static int CONTIDION_MA_BOLL_UP	= 0x8;  //均线支撑&&贴boll上轨
+	public final static int CONTIDION_MULTI_BOTTOM	= 1<<1;  //多重底
+	public final static int CONTIDION_DOUBLE_CROSS	= 1<<2;  //两次金叉
+	public final static int CONTIDION_MA_MACD_UP	= 1<<3;  //均线支撑&&macd红线变长
+	public final static int CONTIDION_MA_BOLL_UP	= 1<<4;  //均线支撑&&贴boll上轨
+	public final static int CONTIDION_MID_DOWN_MACD_UP = 1<<5; //低位macd红线变长
 	
 	//买入原因
 	public int buy_reason = 0;
@@ -408,6 +411,13 @@ public static final Log log = LogFactory.getLog(BTCTransStrategy3.class);
 				this.curt_status	= STATUS.BUYIN;
 				log.info("TransProcess: time:" + sDateTime + ", price:" + df1.format(this.curt_price) + ", buy for ma_support && boll_up, status from " + STATUS.READY + " to " + this.curt_status);
 			}
+		}
+		
+		if (this.is_macd_up && this.is_boll_mid_down) {
+			ret = CONTIDION_MID_DOWN_MACD_UP;
+			is_buy	= true;
+			this.curt_status	= STATUS.BUYIN;
+			log.info("TransProcess: time:" + sDateTime + ", price:" + df1.format(this.curt_price) + ", buy for mid down && macd up, status from " + STATUS.READY + " to " + this.curt_status);
 		}
 //		
 //		//多重底
