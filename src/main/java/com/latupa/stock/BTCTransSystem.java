@@ -1,6 +1,7 @@
 package com.latupa.stock;
 
-import java.io.File;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.text.DateFormat;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
@@ -20,9 +21,8 @@ public class BTCTransSystem {
 	
 	public static final Log log = LogFactory.getLog(BTCTransSystem.class);
 	
-	//交易模式标识文件
-	public static final String TRANS_FILE_DIR = "/tmp/";
-	public static final String TRANS_FILE = "trans.flag";
+	//交易模式表文件
+	public static final String BTC_TRANS_MODE_TABLE = "trans_mode";
 	
 	//运行模式
 	public enum MODE {
@@ -134,6 +134,7 @@ public class BTCTransSystem {
 		this.btc_trans_rec.InitTable(this.btc_trans_postfix);
 		
 		ContextInit();
+		InitTransMode();
 	}
 	
 	public void ContextInit() {
@@ -159,6 +160,46 @@ public class BTCTransSystem {
 		this.btc_year_time_init	= null;
 		this.btc_year_amount_init	= this.BTC_INIT_AMOUNT;
 		this.btc_year_price_init	= 0;
+	}
+	
+	/**
+	 * 初始化交易模式表
+	 */
+	public void InitTransMode() {
+		String sql = "create table if not exists " + BTC_TRANS_MODE_TABLE + 
+				"(`status` int NOT NULL default '0') ENGINE=InnoDB DEFAULT CHARSET=utf8";	
+			
+		this.btc_data.dbInst.updateSQL(sql);
+	}
+	
+	/**
+	 * 判断是否是真实交易
+	 * @return true--真实交易   false--模拟交易
+	 */
+	public boolean CheckTransMode() {
+		ResultSet rs = null;
+		
+		String sql	= "select status as status from " + BTC_TRANS_MODE_TABLE;
+
+		rs = this.btc_data.dbInst.selectSQL(sql);
+		int status = 0;
+		try {
+			if (rs.next()) {
+				status	= rs.getInt("status");
+			}
+			
+			rs.close();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		if (status == 1) {
+			return true;
+		}
+		else {
+			return false;
+		}
 	}
 	
 	/**
@@ -336,7 +377,7 @@ public class BTCTransSystem {
 		//只有实盘才涉及是否进行真实交易
 		if (this.mode == MODE.ACTUAL) {
 			
-			if (new File(TRANS_FILE_DIR + TRANS_FILE).exists()) {
+			if (CheckTransMode() == true) {
 				//进入真实交易模式
 				
 				if (this.trade_mode == true) {//已经是真实交易
