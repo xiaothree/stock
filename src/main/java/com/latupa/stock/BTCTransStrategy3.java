@@ -64,6 +64,7 @@ import org.apache.commons.logging.LogFactory;
  *[11][SUCC] 2014-03-16 对于T+0，且买卖没有手续费的，关键是提升入场成功率，积累受益，而不应该是受益最大化，例如多头以后的准两次死叉等，应该尽可能锁定受益，即使受益不高
  *                      对于贴上轨的入场情况，增加第一个大阴线出场
  *[12][SUCC] 2014-03-18 新增入场场景，布林线中轨下方，macd红线变长   mid_down_macd_up
+ *[13][TODO] 2014-03-24 新郑入场场景，布林线中轨上方，macd红线变长，需要慎重考虑，因为结合12之后，条件过于宽泛
  */
 
 public class BTCTransStrategy3 implements BTCTransStrategy {
@@ -215,7 +216,7 @@ public static final Log log = LogFactory.getLog(BTCTransStrategy3.class);
 	public boolean is_up_yin = false;
 	
 	//跌破昨日开盘价
-	public boolean is_down_yesterday_open = false;
+	public boolean is_down_last_open = false;
 	
 	public BTCTransStrategy3() {
 	}
@@ -237,7 +238,7 @@ public static final Log log = LogFactory.getLog(BTCTransStrategy3.class);
 				"is_macd_up:" + this.is_macd_up + ", " +
 				"is_macd_down:" + this.is_macd_down + ", " +
 				"is_up_yin:" + this.is_up_yin + ", " +
-				"is_down_yesterday_open:" + this.is_down_yesterday_open + ", " +
+				"is_down_last_open:" + this.is_down_last_open + ", " +
 				"num_first_yin:" + this.num_first_yin;
 		return str;
 	}
@@ -376,7 +377,7 @@ public static final Log log = LogFactory.getLog(BTCTransStrategy3.class);
 		if ((record_1cycle_before.close > record_1cycle_before.open) &&
 				(record.close < record.open) &&
 				(record.close < record_1cycle_before.open)) {
-			this.is_down_yesterday_open = true;
+			this.is_down_last_open = true;
 		}
 		
 		log.info("checkpoint:" + this.toString());
@@ -461,17 +462,18 @@ public static final Log log = LogFactory.getLog(BTCTransStrategy3.class);
 					sell_position = 5;
 				}
 			}
-			if (this.buy_reason == CONTIDION_MA_BOLL_UP && 
+			else if (this.buy_reason == CONTIDION_MA_BOLL_UP && 
 					this.num_first_yin == 1 &&
 					this.is_up_yin) {
 				this.curt_status = STATUS.HALF;
 				log.info("TransProcess: time:" + sDateTime + ", price:" + df1.format(this.curt_price) + ", sell for up yin in bull, status from " + STATUS.BULL + " to " + STATUS.HALF);
 				sell_position = 5;
 			}
-			if (this.buy_reason == CONTIDION_MA_BOLL_UP && 
-					this.is_down_yesterday_open) {
+			else if (this.buy_reason == CONTIDION_MA_BOLL_UP && 
+					this.num_first_yin == 1 &&
+					this.is_down_last_open) {
 				this.curt_status = STATUS.HALF;
-				log.info("TransProcess: time:" + sDateTime + ", price:" + df1.format(this.curt_price) + ", sell for down yesterday open in bull, status from " + STATUS.BULL + " to " + STATUS.HALF);
+				log.info("TransProcess: time:" + sDateTime + ", price:" + df1.format(this.curt_price) + ", sell for down last open in bull, status from " + STATUS.BULL + " to " + STATUS.HALF);
 				sell_position = 5;
 			}
 		}
@@ -481,7 +483,7 @@ public static final Log log = LogFactory.getLog(BTCTransStrategy3.class);
 				log.info("TransProcess: time:" + sDateTime + ", price:" + df1.format(this.curt_price) + ", sell for dead_cross in buy, status from " + STATUS.BUYIN + " to " + STATUS.READY);
 				sell_position = 10;
 			}
-			if (this.is_macd_top || this.is_macd_down) {
+			else if (this.is_macd_top || this.is_macd_down) {
 				if (this.is_boll_bbi_down) {
 					this.curt_status	= STATUS.READY;
 					log.info("TransProcess: time:" + sDateTime + ", price:" + df1.format(this.curt_price) + ", sell for (macd_top || macd_down) && bool_bbi_down in buy, status from " + STATUS.BUYIN + " to " + STATUS.READY);
@@ -493,17 +495,18 @@ public static final Log log = LogFactory.getLog(BTCTransStrategy3.class);
 					sell_position = 5;	
 				}
 			}
-			if (this.buy_reason == CONTIDION_MA_BOLL_UP && 
+			else if (this.buy_reason == CONTIDION_MA_BOLL_UP && 
 					this.num_first_yin == 1 &&
 					this.is_up_yin) {
 				this.curt_status = STATUS.HALF;
 				log.info("TransProcess: time:" + sDateTime + ", price:" + df1.format(this.curt_price) + ", sell for up yin in buy, status from " + STATUS.BUYIN + " to " + STATUS.HALF);
 				sell_position = 5;
 			}
-			if (this.buy_reason == CONTIDION_MA_BOLL_UP && 
-					this.is_down_yesterday_open) {
+			else if (this.buy_reason == CONTIDION_MA_BOLL_UP && 
+					this.num_first_yin == 1 &&
+					this.is_down_last_open) {
 				this.curt_status = STATUS.HALF;
-				log.info("TransProcess: time:" + sDateTime + ", price:" + df1.format(this.curt_price) + ", sell for down yesterday open in buy, status from " + STATUS.BULL + " to " + STATUS.HALF);
+				log.info("TransProcess: time:" + sDateTime + ", price:" + df1.format(this.curt_price) + ", sell for down last open in buy, status from " + STATUS.BULL + " to " + STATUS.HALF);
 				sell_position = 5;
 			}
 		}
@@ -520,19 +523,19 @@ public static final Log log = LogFactory.getLog(BTCTransStrategy3.class);
 //				sell_position = 10;
 //			}
 		
-			if (this.is_boll_bbi_or_mid_down) {
+			else if (this.is_boll_bbi_or_mid_down) {
 				this.curt_status	= STATUS.READY;
 				log.info("TransProcess: time:" + sDateTime + ", price:" + df1.format(this.curt_price) + ", sell for bbi_or_mid_down in half, status from " + STATUS.HALF + " to " + STATUS.READY);
 				sell_position = 10;
 			}
 			
-			if (this.is_macd_top) {
+			else if (this.is_macd_top) {
 				this.curt_status	= STATUS.READY;
 				log.info("TransProcess: time:" + sDateTime + ", price:" + df1.format(this.curt_price) + ", sell for macd_top in half, status from " + STATUS.HALF + " to " + STATUS.READY);
 				sell_position = 10;
 			}
 			
-			if (this.is_macd_down) {
+			else if (this.is_macd_down) {
 				this.curt_status	= STATUS.READY;
 				log.info("TransProcess: time:" + sDateTime + ", price:" + df1.format(this.curt_price) + ", sell for macd_down in half, status from " + STATUS.HALF + " to " + STATUS.READY);
 				sell_position = 10;
@@ -578,7 +581,7 @@ public static final Log log = LogFactory.getLog(BTCTransStrategy3.class);
 		is_macd_down	= false;	//macd<0 变短再变长
 		
 		is_up_yin = false;
-		is_down_yesterday_open = false;
+		is_down_last_open = false;
 	}
 	
 }

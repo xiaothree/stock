@@ -65,6 +65,11 @@ class TradeRet {
 	double deal_amount;
 	double avg_price;
 	
+	public TradeRet() {
+		this.deal_amount	= 0;
+		this.avg_price		= 0;
+	}
+	
 	public void Show() {
 		log.info("order_id:" + order_id + ", status:" + status + ", symbol:" + symbol + ", type:" + type + ", price:" + price + ", amount:" + amount + ", deal_amount:" + deal_amount + ", avg_price:" + avg_price);
 	}

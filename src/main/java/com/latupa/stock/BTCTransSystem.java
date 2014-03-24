@@ -372,15 +372,18 @@ public class BTCTransSystem {
 	 * @return
 	 * @throws InterruptedException 
 	 */
-	public void TradeModeSwitch() throws InterruptedException {
+	public void TradeModeSwitch(String sDateTime) throws InterruptedException {
 		
 		//只有实盘才涉及是否进行真实交易
 		if (this.mode == MODE.ACTUAL) {
 			
-			if (CheckTransMode() == true) {
+			if (CheckTransMode() == true &&
+					sDateTime.substring(8, 14).compareTo("090000") >= 0 &&
+					sDateTime.substring(8, 14).compareTo("230000") <= 0) {   //凌晨的时间进入模拟交易
 				//进入真实交易模式
 				
 				if (this.trade_mode == true) {//已经是真实交易
+					log.info("already in real trade mode ...");
 					return;
 				}
 				else {//转成真实交易
@@ -412,6 +415,7 @@ public class BTCTransSystem {
 			else {//模拟交易
 				
 				if (this.trade_mode == false) {//已经是模拟交易
+					log.info("already in virtual trade mode ...");
 					return;
 				}
 				else {//转成模拟交易
@@ -644,16 +648,16 @@ public class BTCTransSystem {
 
 				if (stamp_sec % this.data_cycle == 0) {
 					
+					Date cur_date = new Date(stamp_millis);
+					String sDateTime = df.format(cur_date); 
+					
 					try {
-						this.TradeModeSwitch();
+						this.TradeModeSwitch(sDateTime);
 					} catch (InterruptedException e) {
 						// TODO Auto-generated catch block
 						log.error("mode switch failed!", e);
 						System.exit(0);
 					}
-					
-					Date cur_date = new Date(stamp_millis);
-					String sDateTime = df.format(cur_date); 
 					
 					while (true) {
 						this.btc_data.BTCDataLoadFromDB(20, null);
