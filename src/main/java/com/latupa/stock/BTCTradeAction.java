@@ -126,9 +126,21 @@ public class BTCTradeAction {
 		return trade_ret;
 	}
 	
-	public TradeRet DoBuy() throws InterruptedException {
+	public TradeRet DoBuy(int invest_position) throws InterruptedException {
 		
-		int buy_count	= 0;
+		int buy_count = 0;//尝试交易次数
+		int buy_avail_count = 0;//交易成功次数
+		
+		//获取账户中的金额
+		UserInfo user_info = DoUserInfo();
+		if (user_info == null) {
+			log.error("get account info failed!");
+			return null;
+		}
+		user_info.Show();
+		
+		double invest_cny = (invest_position == 10) ? user_info.cny : (user_info.cny * invest_position / 10);
+		log.info("invest_cny:" + invest_cny);
 		
 		TradeRet trade_ret = new TradeRet();
 		
@@ -136,15 +148,6 @@ public class BTCTradeAction {
 			buy_count++;
 			
 			log.info("buy for " + buy_count + " times");
-			
-			//获取账户中的金额
-			UserInfo user_info = DoUserInfo();
-			if (user_info == null) {
-				log.error("get account info failed!");
-				return null;
-			}
-			user_info.Show();
-			double cny	= user_info.cny;
 			
 			//获取当前买一价
 			Ticker ticker = DoTicker();
@@ -158,10 +161,10 @@ public class BTCTradeAction {
 			double buy_price	= (ticker.buy + ticker.sell) / 2;
 //			double buy_price	= (ticker.buy + ticker.sell) / 2 + BTCApi.TRADE_DIFF;
 			//double buy_price	= ticker.buy + BTCApi.TRADE_DIFF;
-			double buy_quantity	= cny / (buy_price + BTCApi.TRADE_DIFF);
+			double buy_quantity	= invest_cny / (buy_price + BTCApi.TRADE_DIFF);
 			
 			//委托买单
-			log.info("buy total cny:" + cny + ", price:" + buy_price + ", quantify:" + buy_quantity + ", buy1:" + ticker.buy + ", sell1:" + ticker.sell);
+			log.info("buy total cny:" + invest_cny + ", price:" + buy_price + ", quantify:" + buy_quantity + ", buy1:" + ticker.buy + ", sell1:" + ticker.sell);
 			String order_id	= DoTrade("buy", buy_price, buy_quantity);
 			if (order_id == null) {
 				log.error("trade for buy failed!");
@@ -183,13 +186,22 @@ public class BTCTradeAction {
 				
 				//有交易成功的部分
 				if (trade.deal_amount > 0) {
+					buy_avail_count++;
 					trade_ret.deal_amount	+= trade.deal_amount;
 					trade_ret.avg_price		+= trade.avg_price;
+					
+					invest_cny -= trade_ret.avg_price * trade_ret.deal_amount;
+					log.info("remain cny:" + invest_cny);
+					if (invest_cny <= 0) {
+						log.info("buy reach invest_cny, finish");
+						trade_ret.avg_price /= buy_avail_count;
+						return trade_ret;
+					}
 				}
 				
 				if (trade.status == TradeRet.STATUS.TOTAL) {
 					log.info("order return total, finish");
-					trade_ret.avg_price /= buy_count;
+					trade_ret.avg_price /= buy_avail_count;
 					return trade_ret;
 				}
 				else if (trade.status == TradeRet.STATUS.PARTER) {//如果是部分成交
@@ -197,7 +209,7 @@ public class BTCTradeAction {
 					//如果剩余部分小于最小买入份额，就返回
 					if (trade.amount - trade.deal_amount < 0.01) {
 						log.info("need buy(" + trade.amount + "), deal(" + trade.deal_amount + "), finish");
-						trade_ret.avg_price /= buy_count;
+						trade_ret.avg_price /= buy_avail_count;
 						return trade_ret;
 					}
 				}
@@ -214,7 +226,7 @@ public class BTCTradeAction {
 			if (buy_count >= 5) {
 				if (trade_ret.deal_amount > 0) {//如果之前分批买入有成功的，那么也返回成功
 					log.info("has buyed buy_total_quantity:" + trade_ret.deal_amount + ", finish");
-					trade_ret.avg_price /= buy_count;
+					trade_ret.avg_price /= buy_avail_count;
 					return trade_ret;
 				}
 				else {
@@ -258,7 +270,8 @@ public class BTCTradeAction {
 			sell_quantity	= user_info.btc * position / 10;
 		}
 		
-		int sell_count = 0;
+		int sell_count = 0;//尝试交易次数
+		int sell_avail_count = 0;//交易成功次数
 		TradeRet trade_ret = new TradeRet();
 		
 		while (sell_quantity > 0) {
@@ -301,15 +314,16 @@ public class BTCTradeAction {
 				trade.Show();
 				
 				if (trade.deal_amount > 0) {
+					sell_avail_count++;
 					trade_ret.deal_amount	+= trade.deal_amount;
 					trade_ret.avg_price		+= trade.avg_price;
 				}
 				
 				if (trade.status == TradeRet.STATUS.TOTAL) {
-					trade_ret.avg_price /= sell_count;
+					trade_ret.avg_price /= sell_avail_count;
 					return trade_ret;
 				}
-				else if (trade_ret.status == TradeRet.STATUS.PARTER) {//如果是部分成交，则继续卖出剩余的部分
+				else if (trade.status == TradeRet.STATUS.PARTER) {//如果是部分成交，则继续卖出剩余的部分
 					sell_quantity -= trade.deal_amount;
 				}
 			}

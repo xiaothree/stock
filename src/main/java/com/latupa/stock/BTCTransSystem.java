@@ -49,6 +49,9 @@ public class BTCTransSystem {
 	
 	//当前仓位(1-10)成
 	public int btc_curt_position;
+	
+	//投入仓位，投入资金计算方式为账户资金*btc_invest_position/10
+	public int btc_invest_position = 10;
 	 
 	//初始资金
 	public final double BTC_INIT_AMOUNT = 10000;
@@ -167,7 +170,11 @@ public class BTCTransSystem {
 	 */
 	public void InitTransMode() {
 		String sql = "create table if not exists " + BTC_TRANS_MODE_TABLE + 
-				"(`status` int NOT NULL default '0') ENGINE=InnoDB DEFAULT CHARSET=utf8";	
+				"(`status` int NOT NULL default '0', " +			//0--模拟交易  1--真实交易，后面字段暂时只针对真实交易有效
+				"`start` varchar(6) NOT NULL default '', " +		//仓位控制起始时间
+				"`end` varchar(6) NOT NULL default '', " +			//仓位控制结束时间
+				"`position` int NOT NULL default '0'" +				//仓位控制比例，1-10，10表示满仓
+				") ENGINE=InnoDB DEFAULT CHARSET=utf8";	
 			
 		this.btc_data.dbInst.updateSQL(sql);
 	}
@@ -176,16 +183,34 @@ public class BTCTransSystem {
 	 * 判断是否是真实交易
 	 * @return true--真实交易   false--模拟交易
 	 */
-	public boolean CheckTransMode() {
+	public boolean CheckTransMode(String sDateTime) {
 		ResultSet rs = null;
 		
-		String sql	= "select status as status from " + BTC_TRANS_MODE_TABLE;
+		String sql	= "select status as status, start as start, end as end, position as position from " + BTC_TRANS_MODE_TABLE;
 
 		rs = this.btc_data.dbInst.selectSQL(sql);
-		int status = 0;
 		try {
 			if (rs.next()) {
-				status	= rs.getInt("status");
+				int status		= rs.getInt("status");
+				String start	= rs.getString("start");
+				String end		= rs.getString("end");
+				
+				if (status == 1) {
+					if (sDateTime.substring(8, 14).compareTo(start) >= 0 &&
+						sDateTime.substring(8, 14).compareTo(end) <= 0) {
+						this.btc_invest_position = rs.getInt("position");
+					}
+					else {
+						this.btc_invest_position = 10;
+					}
+					
+					log.info("invest_position:" + this.btc_invest_position);
+					
+					return true;
+				}
+				else {
+					return false;
+				}
 			}
 			
 			rs.close();
@@ -194,12 +219,7 @@ public class BTCTransSystem {
 			e.printStackTrace();
 		}
 		
-		if (status == 1) {
-			return true;
-		}
-		else {
-			return false;
-		}
+		return false;
 	}
 	
 	/**
@@ -326,7 +346,7 @@ public class BTCTransSystem {
 		
 		if (this.mode == MODE.ACTUAL && this.trade_mode == true) {//实盘（真实交易）
 			try {
-				TradeRet trade_ret = this.btc_trade_action.DoBuy();
+				TradeRet trade_ret = this.btc_trade_action.DoBuy(this.btc_invest_position);
 				//买入成功
 				if (trade_ret != null) {
 					this.btc_curt_position = 10;
@@ -377,9 +397,7 @@ public class BTCTransSystem {
 		//只有实盘才涉及是否进行真实交易
 		if (this.mode == MODE.ACTUAL) {
 			
-			if (CheckTransMode() == true &&
-					sDateTime.substring(8, 14).compareTo("090000") >= 0 &&
-					sDateTime.substring(8, 14).compareTo("230000") <= 0) {   //凌晨的时间进入模拟交易
+			if (CheckTransMode(sDateTime) == true) {
 				//进入真实交易模式
 				
 				if (this.trade_mode == true) {//已经是真实交易
