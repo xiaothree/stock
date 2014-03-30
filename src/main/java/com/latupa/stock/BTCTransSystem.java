@@ -290,7 +290,7 @@ public class BTCTransSystem {
 				try {
 					UserInfo user_info = this.btc_trade_action.DoUserInfo();
 					if (user_info != null) {
-						this.btc_curt_amount = user_info.cny;
+						this.btc_curt_amount = user_info.cny + user_info.cny_freezed;
 						this.btc_accumulate_profit = this.btc_curt_amount - this.btc_amount_init;
 						this.btc_profit = this.btc_curt_amount - last_curt_amount;
 					}

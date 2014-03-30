@@ -69,7 +69,7 @@ import org.apache.commons.logging.LogFactory;
 
 public class BTCTransStrategy3 implements BTCTransStrategy {
 
-public static final Log log = LogFactory.getLog(BTCTransStrategy3.class);
+	public static final Log log = LogFactory.getLog(BTCTransStrategy3.class);
 	
 	public enum STATUS {
 		READY,	//待买，即空仓
@@ -390,12 +390,12 @@ public static final Log log = LogFactory.getLog(BTCTransStrategy3.class);
 		DecimalFormat df1 = new DecimalFormat("#0.00");
 		
 		//低位二次金叉
-		if (this.is_double_gold_cross) {
-			ret = CONTIDION_DOUBLE_CROSS;
-			is_buy	= true;
-			this.curt_status	= STATUS.BUYIN;
-			log.info("TransProcess: time:" + sDateTime + ", price:" + df1.format(this.curt_price) + ", buy for double_gold_cross, status from " + STATUS.READY + " to " + this.curt_status);
-		}
+//hold		if (this.is_double_gold_cross) {
+//			ret = CONTIDION_DOUBLE_CROSS;
+//			is_buy	= true;
+//			this.curt_status	= STATUS.BUYIN;
+//			log.info("TransProcess: time:" + sDateTime + ", price:" + df1.format(this.curt_price) + ", buy for double_gold_cross, status from " + STATUS.READY + " to " + this.curt_status);
+//		}
 		
 		//均线支撑
 		if (this.is_ma_support) {
@@ -420,9 +420,9 @@ public static final Log log = LogFactory.getLog(BTCTransStrategy3.class);
 			this.curt_status	= STATUS.BUYIN;
 			log.info("TransProcess: time:" + sDateTime + ", price:" + df1.format(this.curt_price) + ", buy for mid down && macd up, status from " + STATUS.READY + " to " + this.curt_status);
 		}
-//		
-//		//多重底
-//		if (this.is_multi_macd_bottom) {
+		
+		//多重底
+//hold		if (this.is_multi_macd_bottom) {
 //			ret = CONTIDION_MULTI_BOTTOM;
 //			is_buy	= true;
 //			this.curt_status = STATUS.BUYIN;
