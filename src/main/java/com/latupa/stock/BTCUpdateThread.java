@@ -47,7 +47,6 @@ public class BTCUpdateThread extends Thread {
 			
 			stamp_millis = System.currentTimeMillis();
 			stamp_sec = stamp_millis / 1000;
-			
 			if (stamp_sec >= (last_stamp_sec + this.btc_update_sys.fetch_cycle)) {
 				log.info("fetch:" + stamp_sec);
 				
@@ -69,7 +68,8 @@ public class BTCUpdateThread extends Thread {
 					}
 				}
 				
-				last_stamp_sec = stamp_sec; 
+				last_stamp_sec = stamp_sec;
+				log.info("last_stamp_sec:" + last_stamp_sec);
 			}
 			else {
 				try {

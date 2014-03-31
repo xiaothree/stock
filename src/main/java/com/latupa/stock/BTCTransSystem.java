@@ -5,6 +5,7 @@ import java.sql.SQLException;
 import java.text.DateFormat;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 
 import org.apache.commons.logging.Log;
@@ -236,14 +237,22 @@ public class BTCTransSystem {
 		
 		if (this.mode == MODE.ACTUAL && this.trade_mode == true) {//实盘（真实交易）
 			try {
-				TradeRet trade_ret = this.btc_trade_action.DoSell(sell_position);
+				ArrayList<TradeRet> tr_list = this.btc_trade_action.DoSell(sell_position);
+				
 				//卖出成功
-				if (trade_ret != null) {
-					sell_quantity	= trade_ret.deal_amount;
+				if (tr_list != null && tr_list.size() > 0) {
+					
+					double sum_price = 0;
+					for (TradeRet tr : tr_list) {
+						sell_quantity	+= tr.deal_amount;
+						sum_price		+= tr.avg_price;
+						this.btc_profit	+= (tr.avg_price - this.btc_buy_price) * tr.deal_amount;
+						this.btc_fee_cost	+= (tr.avg_price * tr.deal_amount * this.BTC_FEE);
+					}
+					
 					this.btc_curt_quantity	-= sell_quantity;
-					this.btc_sell_price	= trade_ret.avg_price;
-					this.btc_profit	+= ((this.btc_sell_price - this.btc_buy_price) * sell_quantity); 
-					this.btc_fee_cost += (this.btc_sell_price * sell_quantity * this.BTC_FEE);
+					this.btc_sell_price	= sum_price / tr_list.size();
+					
 				}
 				else {
 					log.error("sell action failed!");
@@ -290,9 +299,10 @@ public class BTCTransSystem {
 				try {
 					UserInfo user_info = this.btc_trade_action.DoUserInfo();
 					if (user_info != null) {
+						user_info.Show();
 						this.btc_curt_amount = user_info.cny + user_info.cny_freezed;
-						this.btc_accumulate_profit = this.btc_curt_amount - this.btc_amount_init;
 						this.btc_profit = this.btc_curt_amount - last_curt_amount;
+						this.btc_accumulate_profit = this.btc_curt_amount - this.btc_amount_init;
 					}
 					else {
 						log.error("get cnt failed");
@@ -343,16 +353,23 @@ public class BTCTransSystem {
 		
 		this.btc_time_buyin	= sDateTime;
 		this.btc_buy_reason	= reason;
+		double amount = 0;
 		
 		if (this.mode == MODE.ACTUAL && this.trade_mode == true) {//实盘（真实交易）
 			try {
-				TradeRet trade_ret = this.btc_trade_action.DoBuy(this.btc_invest_position);
+				ArrayList<TradeRet> tr_list = this.btc_trade_action.DoBuy(this.btc_invest_position);
 				//买入成功
-				if (trade_ret != null) {
+				if (tr_list != null && tr_list.size() > 0) {
 					this.btc_curt_position = 10;
-					this.btc_curt_quantity	= trade_ret.deal_amount;
-					this.btc_buy_price	= trade_ret.avg_price;
-					this.btc_fee_cost += (this.btc_curt_quantity * this.btc_buy_price * this.BTC_FEE);
+					
+					double sum_price = 0;
+					for (TradeRet tr : tr_list) {
+						this.btc_curt_quantity	+= tr.deal_amount;
+						sum_price				+= tr.avg_price;
+						this.btc_fee_cost 		+= (this.btc_curt_quantity * tr.avg_price * this.BTC_FEE);
+						amount					+= (this.btc_curt_quantity * tr.avg_price);
+					}
+					this.btc_buy_price	= sum_price / tr_list.size();
 				}
 				else {
 					log.error("buy action failed!");
@@ -380,7 +397,7 @@ public class BTCTransSystem {
 		DecimalFormat df1 = new DecimalFormat("#0.00");
 		log.info("TransProcess[BUY]: quantity:" + df1.format(this.btc_curt_quantity) +
 				", price:" + df1.format(this.btc_buy_price) +
-				", amount:" + df1.format(this.btc_curt_quantity * this.btc_buy_price) +
+				", amount:" + df1.format(amount) +
 				", curt position:" + this.btc_curt_position);
 		
 		return;
@@ -440,9 +457,9 @@ public class BTCTransSystem {
 					log.info("change to virtual trade mode");
 					
 					//卖出当前所有仓位
-					TradeRet trade_ret = this.btc_trade_action.DoSell(10);
+					ArrayList<TradeRet> tr_list = this.btc_trade_action.DoSell(10);
 					this.btc_trans_stra.curt_status = BTCTransStrategy3.STATUS.READY;
-					if (trade_ret != null) {
+					if (tr_list != null) {
 						//获取当前资金
 						UserInfo user_info	= this.btc_api.ApiUserInfo();
 						if (user_info != null) {

@@ -1,5 +1,7 @@
 package com.latupa.stock;
 
+import java.util.ArrayList;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -126,10 +128,11 @@ public class BTCTradeAction {
 		return trade_ret;
 	}
 	
-	public TradeRet DoBuy(int invest_position) throws InterruptedException {
+	public ArrayList<TradeRet> DoBuy(int invest_position) throws InterruptedException {
+		
+		ArrayList<TradeRet> tr_list = new ArrayList<TradeRet>();
 		
 		int buy_count = 0;//尝试交易次数
-		int buy_avail_count = 0;//交易成功次数
 		
 		//获取账户中的金额
 		UserInfo user_info = DoUserInfo();
@@ -141,8 +144,6 @@ public class BTCTradeAction {
 		
 		double invest_cny = (invest_position == 10) ? user_info.cny : (user_info.cny * invest_position / 10);
 		log.info("invest_cny:" + invest_cny);
-		
-		TradeRet trade_ret = new TradeRet();
 		
 		while (true) {
 			buy_count++;
@@ -186,31 +187,29 @@ public class BTCTradeAction {
 				
 				//有交易成功的部分
 				if (trade.deal_amount > 0) {
-					buy_avail_count++;
-					trade_ret.deal_amount	+= trade.deal_amount;
-					trade_ret.avg_price		+= trade.avg_price;
 					
-					invest_cny -= trade_ret.avg_price * trade_ret.deal_amount;
+					tr_list.add(trade);
+					
+					invest_cny -= trade.avg_price * trade.deal_amount;
+					
 					log.info("remain cny:" + invest_cny);
+					
 					if (invest_cny <= 0) {
 						log.info("buy reach invest_cny, finish");
-						trade_ret.avg_price /= buy_avail_count;
-						return trade_ret;
+						return tr_list;
 					}
 				}
 				
 				if (trade.status == TradeRet.STATUS.TOTAL) {
 					log.info("order return total, finish");
-					trade_ret.avg_price /= buy_avail_count;
-					return trade_ret;
+					return tr_list;
 				}
 				else if (trade.status == TradeRet.STATUS.PARTER) {//如果是部分成交
 					log.info("order return parter");
 					//如果剩余部分小于最小买入份额，就返回
 					if (trade.amount - trade.deal_amount < 0.01) {
 						log.info("need buy(" + trade.amount + "), deal(" + trade.deal_amount + "), finish");
-						trade_ret.avg_price /= buy_avail_count;
-						return trade_ret;
+						return tr_list;
 					}
 				}
 			}
@@ -224,10 +223,9 @@ public class BTCTradeAction {
 			
 			//达到5次就结束
 			if (buy_count >= 5) {
-				if (trade_ret.deal_amount > 0) {//如果之前分批买入有成功的，那么也返回成功
-					log.info("has buyed buy_total_quantity:" + trade_ret.deal_amount + ", finish");
-					trade_ret.avg_price /= buy_avail_count;
-					return trade_ret;
+				if (tr_list.size() > 0) {//如果之前分批买入有成功的，那么也返回成功
+					log.info("has buyed buy_total_quantity and over " + buy_count + " times, finish");
+					return tr_list;
 				}
 				else {
 					log.error("force buy failed!");
@@ -243,7 +241,9 @@ public class BTCTradeAction {
 	 * @return
 	 * @throws InterruptedException
 	 */
-	public TradeRet DoSell(int position) throws InterruptedException {
+	public ArrayList<TradeRet> DoSell(int position) throws InterruptedException {
+		
+		ArrayList<TradeRet> tr_list = new ArrayList<TradeRet>();
 		
 		//获取账户中的数量
 		UserInfo user_info = DoUserInfo();
@@ -258,7 +258,7 @@ public class BTCTradeAction {
 			log.info("no quantity to sell");
 			//避免过于频繁
 			Thread.sleep(5000);
-			return new TradeRet();
+			return tr_list;
 		}
 		
 		//计算卖出数量
@@ -271,8 +271,6 @@ public class BTCTradeAction {
 		}
 		
 		int sell_count = 0;//尝试交易次数
-		int sell_avail_count = 0;//交易成功次数
-		TradeRet trade_ret = new TradeRet();
 		
 		while (sell_quantity > 0) {
 			
@@ -314,14 +312,11 @@ public class BTCTradeAction {
 				trade.Show();
 				
 				if (trade.deal_amount > 0) {
-					sell_avail_count++;
-					trade_ret.deal_amount	+= trade.deal_amount;
-					trade_ret.avg_price		+= trade.avg_price;
+					tr_list.add(trade);
 				}
 				
 				if (trade.status == TradeRet.STATUS.TOTAL) {
-					trade_ret.avg_price /= sell_avail_count;
-					return trade_ret;
+					return tr_list;
 				}
 				else if (trade.status == TradeRet.STATUS.PARTER) {//如果是部分成交，则继续卖出剩余的部分
 					sell_quantity -= trade.deal_amount;
