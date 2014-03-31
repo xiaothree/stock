@@ -253,6 +253,7 @@ public class BTCTransSystem {
 					this.btc_curt_quantity	-= sell_quantity;
 					this.btc_sell_price	= sum_price / tr_list.size();
 					
+					log.info("profit up to now from this buy in is :" + this.btc_profit);
 				}
 				else {
 					log.error("sell action failed!");
