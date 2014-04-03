@@ -263,71 +263,141 @@ public class BTCTradeAction {
 		
 		//计算卖出数量
 		double sell_quantity;
+		
+		int sell_count = 0;//尝试交易次数
 		if (position == 10) {
 			sell_quantity	= user_info.btc;
+			
+			while (sell_quantity > 0) {
+				
+				sell_count++;
+				log.info("sell for " + sell_count + " times");
+				
+				//获取当前卖一价
+				Ticker ticker = DoTicker();
+				if (ticker == null) {
+					log.error("get curt price failed!");
+					return null;
+				}
+				ticker.Show();
+				
+				//计算卖出委托价
+				double sell_price = (ticker.sell + ticker.buy) / 2;
+//				double sell_price = (ticker.sell + ticker.buy) / 2 - BTCApi.TRADE_DIFF * sell_count;
+				//double sell_price	= ticker.sell - BTCApi.TRADE_DIFF * sell_count;
+				
+				//委托卖单
+				log.info("sell price:" + sell_price + ", quantity:" + sell_quantity + ", buy1:" + ticker.buy + ", sell1:" + ticker.sell);
+				String order_id	= DoTrade("sell", sell_price, sell_quantity);
+				if (order_id == null) {
+					log.error("trade for sell failed!");
+					return null;
+				}
+				log.info("order_id:" + order_id);
+				
+				//避免委托卖单和查单过于频繁
+				Thread.sleep(10000);
+				
+				//获取委托的结果
+				TradeRet trade = DoGetOrder(order_id);
+				if (trade == null) {
+					log.error("get order result failed!");
+					return null;
+				}
+				else {
+					trade.Show();
+					
+					if (trade.deal_amount > 0) {
+						tr_list.add(trade);
+					}
+					
+					if (trade.status == TradeRet.STATUS.TOTAL) {
+						return tr_list;
+					}
+				}
+				
+				//撤销委托
+				boolean ret = DoCancelOrder(order_id);
+				if (ret != true) {
+					log.error("cancel trade failed!");
+					return null;
+				}
+				
+				Thread.sleep(5000);
+				
+				//获取账户中的数量
+				user_info = DoUserInfo();
+				if (user_info == null) {
+					log.error("get account info failed!");
+					return null;
+				}
+				user_info.Show();
+				
+				sell_quantity = user_info.btc;
+				
+				Thread.sleep(5000);
+			}
 		}
 		else {
 			sell_quantity	= user_info.btc * position / 10;
-		}
-		
-		int sell_count = 0;//尝试交易次数
-		
-		while (sell_quantity > 0) {
 			
-			sell_count++;
-			log.info("sell for " + sell_count + " times");
-			
-			//获取当前卖一价
-			Ticker ticker = DoTicker();
-			if (ticker == null) {
-				log.error("get curt price failed!");
-				return null;
-			}
-			ticker.Show();
-			
-			//计算卖出委托价
-			double sell_price = (ticker.sell + ticker.buy) / 2;
-//			double sell_price = (ticker.sell + ticker.buy) / 2 - BTCApi.TRADE_DIFF * sell_count;
-			//double sell_price	= ticker.sell - BTCApi.TRADE_DIFF * sell_count;
-			
-			//委托卖单
-			log.info("sell price:" + sell_price + ", quantity:" + sell_quantity + ", buy1:" + ticker.buy + ", sell1:" + ticker.sell);
-			String order_id	= DoTrade("sell", sell_price, sell_quantity);
-			if (order_id == null) {
-				log.error("trade for sell failed!");
-				return null;
-			}
-			log.info("order_id:" + order_id);
-			
-			//避免委托卖单和查单过于频繁
-			Thread.sleep(10000);
-			
-			//获取委托的结果
-			TradeRet trade = DoGetOrder(order_id);
-			if (trade == null) {
-				log.error("get order result failed!");
-				return null;
-			}
-			else {
-				trade.Show();
+			while (sell_quantity > 0) {
 				
-				if (trade.deal_amount > 0) {
-					tr_list.add(trade);
+				sell_count++;
+				log.info("sell for " + sell_count + " times");
+				
+				//获取当前卖一价
+				Ticker ticker = DoTicker();
+				if (ticker == null) {
+					log.error("get curt price failed!");
+					return null;
+				}
+				ticker.Show();
+				
+				//计算卖出委托价
+				double sell_price = (ticker.sell + ticker.buy) / 2;
+//				double sell_price = (ticker.sell + ticker.buy) / 2 - BTCApi.TRADE_DIFF * sell_count;
+				//double sell_price	= ticker.sell - BTCApi.TRADE_DIFF * sell_count;
+				
+				//委托卖单
+				log.info("sell price:" + sell_price + ", quantity:" + sell_quantity + ", buy1:" + ticker.buy + ", sell1:" + ticker.sell);
+				String order_id	= DoTrade("sell", sell_price, sell_quantity);
+				if (order_id == null) {
+					log.error("trade for sell failed!");
+					return null;
+				}
+				log.info("order_id:" + order_id);
+				
+				//避免委托卖单和查单过于频繁
+				Thread.sleep(10000);
+				
+				//获取委托的结果
+				TradeRet trade = DoGetOrder(order_id);
+				if (trade == null) {
+					log.error("get order result failed!");
+					return null;
+				}
+				else {
+					trade.Show();
+					
+					if (trade.deal_amount > 0) {
+						tr_list.add(trade);
+					}
+					
+					if (trade.status == TradeRet.STATUS.TOTAL) {
+						return tr_list;
+					}
+					else if (trade.status == TradeRet.STATUS.PARTER) {//如果是部分成交，则继续卖出剩余的部分
+						sell_quantity -= trade.deal_amount;
+					}
 				}
 				
-				if (trade.status == TradeRet.STATUS.TOTAL) {
-					return tr_list;
+				//撤销委托
+				boolean ret = DoCancelOrder(order_id);
+				if (ret != true) {
+					log.error("cancel trade failed!");
+					return null;
 				}
-				else if (trade.status == TradeRet.STATUS.PARTER) {//如果是部分成交，则继续卖出剩余的部分
-					sell_quantity -= trade.deal_amount;
-				}
-			}
-			
-			//撤销委托
-			boolean ret = DoCancelOrder(order_id);
-			if (ret != true) {
-				log.error("cancel trade failed!");
-				return null;
 			}
 		}
 		
