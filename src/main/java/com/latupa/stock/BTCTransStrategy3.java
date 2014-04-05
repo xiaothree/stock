@@ -200,6 +200,7 @@ public class BTCTransStrategy3 implements BTCTransStrategy {
 	public boolean is_boll_up	= false;
 	public boolean is_boll_bbi_down	= false;
 	public boolean is_boll_mid_down	= false;
+	public boolean is_last_boll_mid_down = false; //上一条K线低于布林线中轨
 	public boolean is_boll_midsell_position_down	= false;
 	public boolean is_boll_bbi_or_mid_down = false;
 	
@@ -232,6 +233,7 @@ public class BTCTransStrategy3 implements BTCTransStrategy {
 				"is_boll_up:" + this.is_boll_up + ", " +
 				"is_boll_bbi_down:" + this.is_boll_bbi_down + ", " +
 				"is_boll_mid_down:" + this.is_boll_mid_down + ", " +
+				"is_last_boll_mid_down:" + this.is_last_boll_mid_down + ", " +
 				"is_boll_bbi_or_mid_down:" + this.is_boll_bbi_or_mid_down + ", " +
 				"is_macd_top:" + this.is_macd_top + ", " +
 				"is_macd_bottom:" + this.is_macd_bottom + ", " +
@@ -355,6 +357,11 @@ public class BTCTransStrategy3 implements BTCTransStrategy {
 			this.is_boll_mid_down	= true;
 		}
 		
+		//上一条K线跌破布林线中轨
+		if (record_1cycle_before.close < record_1cycle_before.boll_record.mid) {
+			this.is_last_boll_mid_down	= true;
+		}
+		
 		//跌破bbi和布林线中轨的低点
 		if (((record.boll_record.mid < record.boll_record.bbi) && (record.close < record.boll_record.mid)) ||
 				((record.boll_record.bbi < record.boll_record.mid) && (record.close < record.boll_record.bbi))) {
@@ -414,7 +421,7 @@ public class BTCTransStrategy3 implements BTCTransStrategy {
 			}
 		}
 		
-		if (this.is_macd_up && this.is_boll_mid_down) {
+		if (this.is_macd_up && this.is_last_boll_mid_down) {
 //		if (this.is_macd_up) {
 			ret = CONTIDION_MID_DOWN_MACD_UP;
 			is_buy	= true;
@@ -580,6 +587,7 @@ public class BTCTransStrategy3 implements BTCTransStrategy {
 		is_boll_up	= false;
 		is_boll_bbi_down	= false;
 		is_boll_mid_down	= false;
+		is_last_boll_mid_down = false;
 		is_boll_bbi_or_mid_down = false;
 		
 		//macd顶、底
