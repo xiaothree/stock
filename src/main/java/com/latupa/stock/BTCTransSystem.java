@@ -319,7 +319,7 @@ public class BTCTransSystem {
 					this.btc_time_buyin);
 		
 			log.info("TransProcess[SUMMARY]: " + "time:" + this.btc_time_buyin + "-" + sDateTime + 
-					", btc_price:" + this.btc_buy_price + "->" + this.btc_sell_price + "(" + df1.format(this.btc_sell_price - this.btc_buy_price) + "," + df1.format((this.btc_sell_price - this.btc_buy_price) / this.btc_buy_price * 100) + "%)" + 
+					", btc_price:" + df1.format(this.btc_buy_price) + "->" + df1.format(this.btc_sell_price) + "(" + df1.format(this.btc_sell_price - this.btc_buy_price) + "," + df1.format((this.btc_sell_price - this.btc_buy_price) / this.btc_buy_price * 100) + "%)" + 
 					", volumn:" + df1.format(this.btc_buy_volumn) + "->" + df1.format(this.btc_buy_volumn + this.btc_profit) + "(" + df1.format(this.btc_profit) + "," + df1.format(this.btc_profit / this.btc_buy_volumn * 100) + "%)" + 
 					", amount:" + df1.format(this.btc_curt_amount) +
 					", accu profit:" + df1.format(this.btc_accumulate_profit) + "(" + df1.format(this.btc_accumulate_profit / this.btc_amount_init * 100) + "%)" +

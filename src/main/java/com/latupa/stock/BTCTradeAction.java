@@ -106,6 +106,28 @@ public class BTCTradeAction {
 	}
 	
 	/**
+	 * 获取订单状态，立即返回
+	 * @param order_id
+	 * @return
+	 * @throws InterruptedException
+	 */
+	public TradeRet DoGetOrderNow(String order_id) throws InterruptedException {
+		int count = 0;
+		TradeRet trade_ret = btc_api.ApiGetOrder(order_id);
+		while (trade_ret == null) {
+			count++;
+			if (count == 5) {
+				break;
+			}
+			
+			Thread.sleep(10000);
+			trade_ret = btc_api.ApiGetOrder(order_id);
+		}
+		
+		return trade_ret;
+	}
+	
+	/**
 	 * 获取订单状态
 	 * @param order_id
 	 * @return
@@ -321,6 +343,27 @@ public class BTCTradeAction {
 				if (ret != true) {
 					log.error("cancel trade failed!");
 					return null;
+				}
+				
+				Thread.sleep(5000);
+				
+				//获取委托的结果
+				trade = DoGetOrderNow(order_id);
+				if (trade == null) {
+					log.error("get order result failed!");
+					return null;
+				}
+				else {
+					log.info("update get order " + order_id);
+					trade.Show();
+					
+					if (trade.deal_amount > 0) {
+						tr_list.add(trade);
+					}
+					
+					if (trade.status == TradeRet.STATUS.TOTAL) {
+						return tr_list;
+					}
 				}
 				
 				Thread.sleep(5000);
