@@ -41,6 +41,14 @@ class UserInfo {
 	double btc_freezed;
 	double ltc_freezed;
 	double cny_freezed;
+	public UserInfo() {
+		this.btc = 0;
+		this.ltc = 0;
+		this.cny = 0;
+		this.btc_freezed = 0;
+		this.ltc_freezed = 0;
+		this.cny_freezed = 0;
+	}
 	public void Show() {
 		log.info("btc:" + btc + ", ltc:" + ltc + ", cny:" + cny + ", fbtc:" + btc_freezed + ", fltc:" + ltc_freezed + ", fcny:" + cny_freezed);
 	}
