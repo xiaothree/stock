@@ -329,11 +329,8 @@ public class BTCTradeAction {
 				else {
 					trade.Show();
 					
-					if (trade.deal_amount > 0) {
-						tr_list.add(trade);
-					}
-					
 					if (trade.status == TradeRet.STATUS.TOTAL) {
+						tr_list.add(trade);
 						return tr_list;
 					}
 				}
