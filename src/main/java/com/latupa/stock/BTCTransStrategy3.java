@@ -390,6 +390,11 @@ public class BTCTransStrategy3 implements BTCTransStrategy {
 		log.info("checkpoint:" + this.toString());
 	}
 	
+	public void BuyReset() {
+		log.info("TransProcess: ret buy status to " + STATUS.READY);
+		this.curt_status = STATUS.READY;
+	}
+	
 	public int IsBuy(String sDateTime) {
 		
 		boolean is_buy = false;

@@ -336,14 +336,7 @@ public class BTCTransSystem {
 	 * @param price 当前价格
 	 * @param reason 买入原因
 	 */
-	public void BuyAction(String sDateTime, double price, int reason) {
-		
-		this.btc_curt_position = 10;
-		
-		this.btc_time_buyin	= sDateTime;
-		this.btc_buy_reason	= reason;
-		
-		this.btc_buy_volumn = 0;
+	public boolean BuyAction(String sDateTime, double price, int reason) {
 		
 		if (this.mode == MODE.ACTUAL && this.trade_mode == true) {//实盘（真实交易）
 			try {
@@ -352,6 +345,7 @@ public class BTCTransSystem {
 				if (tr_list != null && tr_list.size() > 0) {
 					
 					this.btc_curt_quantity = 0;
+					this.btc_buy_volumn = 0;
 					
 					double sum_price	= 0;
 					for (TradeRet tr : tr_list) {	
@@ -366,7 +360,7 @@ public class BTCTransSystem {
 				}
 				else {
 					log.error("buy action failed!");
-					System.exit(0);
+					return false;
 				}
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
@@ -382,6 +376,11 @@ public class BTCTransSystem {
 			this.btc_curt_amount	   -= this.btc_buy_volumn;
 		}
 		
+		this.btc_curt_position = 10;
+		
+		this.btc_time_buyin	= sDateTime;
+		this.btc_buy_reason	= reason;
+		
 		this.btc_trans_rec.InsertTransDetail(this.btc_trans_postfix,
 				sDateTime, 
 				BTCTransRecord.OPT.OPT_BUY, 
@@ -394,7 +393,7 @@ public class BTCTransSystem {
 				", volumn:" + df1.format(this.btc_buy_volumn) +
 				", position:" + this.btc_curt_position);
 		
-		return;
+		return true;
 	}
 	
 	/**
@@ -544,7 +543,9 @@ public class BTCTransSystem {
 			
 			int ret = this.btc_trans_stra.IsBuy(sDateTime);
 			if (ret != 0) {
-				this.BuyAction(sDateTime, record.close, ret);
+				if (this.BuyAction(sDateTime, record.close, ret) != true) {
+					this.btc_trans_stra.BuyReset();
+				}
 			}
 		}
 		//如果已入场，则判断是否要出场
