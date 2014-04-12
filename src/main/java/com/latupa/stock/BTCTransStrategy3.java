@@ -219,6 +219,9 @@ public class BTCTransStrategy3 implements BTCTransStrategy {
 	//跌破昨日开盘价
 	public boolean is_down_last_open = false;
 	
+	//止损
+	public boolean is_zhisun = false;
+	
 	public BTCTransStrategy3() {
 	}
 	
@@ -241,11 +244,12 @@ public class BTCTransStrategy3 implements BTCTransStrategy {
 				"is_macd_down:" + this.is_macd_down + ", " +
 				"is_up_yin:" + this.is_up_yin + ", " +
 				"is_down_last_open:" + this.is_down_last_open + ", " +
-				"num_first_yin:" + this.num_first_yin;
+				"num_first_yin:" + this.num_first_yin + ", " +
+				"is_zhisun:" + this.is_zhisun;
 		return str;
 	}
 	
-	public void CheckPoint(BTCData btc_data) {
+	public void CheckPoint(double buy_price, BTCData btc_data) {
 		
 		BTCTotalRecord record	= btc_data.BTCRecordOptGetByCycle(0, null);
 		BTCTotalRecord record_1cycle_before	= btc_data.BTCRecordOptGetByCycle(1, null);
@@ -387,6 +391,11 @@ public class BTCTransStrategy3 implements BTCTransStrategy {
 			this.is_down_last_open = true;
 		}
 		
+		//触达止损，即2%
+		if ((record.close - buy_price) / buy_price < -0.02) {
+			this.is_zhisun = true;
+		}
+		
 		log.info("checkpoint:" + this.toString());
 	}
 	
@@ -457,76 +466,72 @@ public class BTCTransStrategy3 implements BTCTransStrategy {
 		return ret;
 	}
 	
+	private void StatusChange(STATUS to_status, String reason, String sDateTime) {
+		DecimalFormat df1 = new DecimalFormat("#0.00");
+		log.info("TransProcess: time:" + sDateTime + ", price:" + df1.format(this.curt_price) + ", sell for " + reason + ", status from " + this.curt_status + " to " + to_status);
+		this.curt_status = to_status;
+	}
+	
 	public int IsSell(String sDateTime) {
 		
-		DecimalFormat df1 = new DecimalFormat("#0.00");
+		
 		int sell_position = 0;
 		
 		if (this.curt_status == STATUS.BULL) {
 			if (this.is_dead_cross) {
 				if (this.is_boll_bbi_down) {
-					this.curt_status = STATUS.READY;
-					log.info("TransProcess: time:" + sDateTime + ", price:" + df1.format(this.curt_price) + ", sell for dead_cross && bbi_down in bull, status from " + STATUS.BULL + " to " + STATUS.READY);
+					StatusChange(STATUS.READY, "dead_cross && bbi_down in bull", sDateTime);
 					sell_position = 10;
 				}
 				else {
-					this.curt_status	= STATUS.HALF;
-					log.info("TransProcess: time:" + sDateTime + ", price:" + df1.format(this.curt_price) + ", sell for dead_cross in bull, status from " + STATUS.BULL + " to " + STATUS.HALF);
+					StatusChange(STATUS.HALF, "dead_cross in bull", sDateTime);
 					sell_position = 5;
 				}
 			}
 			else if (this.buy_reason == CONTIDION_MA_BOLL_UP && 
 					this.num_first_yin == 1 &&
 					this.is_up_yin) {
-				this.curt_status = STATUS.HALF;
-				log.info("TransProcess: time:" + sDateTime + ", price:" + df1.format(this.curt_price) + ", sell for up yin in bull, status from " + STATUS.BULL + " to " + STATUS.HALF);
+				StatusChange(STATUS.HALF, "up yin in bull", sDateTime);
 				sell_position = 5;
 			}
 			else if (this.buy_reason == CONTIDION_MA_BOLL_UP && 
 					this.num_first_yin == 1 &&
 					this.is_down_last_open) {
-				this.curt_status = STATUS.HALF;
-				log.info("TransProcess: time:" + sDateTime + ", price:" + df1.format(this.curt_price) + ", sell for down last open in bull, status from " + STATUS.BULL + " to " + STATUS.HALF);
+				StatusChange(STATUS.HALF, "down last open in bull", sDateTime);
 				sell_position = 5;
 			}
 		}
 		else if (this.curt_status == STATUS.BUYIN) {
 			if (this.is_dead_cross) {
-				this.curt_status	= STATUS.READY;
-				log.info("TransProcess: time:" + sDateTime + ", price:" + df1.format(this.curt_price) + ", sell for dead_cross in buy, status from " + STATUS.BUYIN + " to " + STATUS.READY);
+				StatusChange(STATUS.READY, "dead_cross in buy", sDateTime);
 				sell_position = 10;
 			}
 			else if (this.is_macd_top || this.is_macd_down) {
 				if (this.is_boll_bbi_down) {
-					this.curt_status	= STATUS.READY;
-					log.info("TransProcess: time:" + sDateTime + ", price:" + df1.format(this.curt_price) + ", sell for (macd_top || macd_down) && bool_bbi_down in buy, status from " + STATUS.BUYIN + " to " + STATUS.READY);
+					StatusChange(STATUS.READY, "(macd_top || macd_down) && bool_bbi_down in buy", sDateTime);
 					sell_position = 10;
 				}
 				else {
-					this.curt_status	= STATUS.HALF;
-					log.info("TransProcess: time:" + sDateTime + ", price:" + df1.format(this.curt_price) + ", sell for macd_top || macd_down in buy, status from " + STATUS.BUYIN + " to " + STATUS.HALF);
+					StatusChange(STATUS.HALF, "macd_top || macd_down in buy", sDateTime);
 					sell_position = 5;	
 				}
 			}
 			else if (this.buy_reason == CONTIDION_MA_BOLL_UP && 
 					this.num_first_yin == 1 &&
 					this.is_up_yin) {
-				this.curt_status = STATUS.HALF;
-				log.info("TransProcess: time:" + sDateTime + ", price:" + df1.format(this.curt_price) + ", sell for up yin in buy, status from " + STATUS.BUYIN + " to " + STATUS.HALF);
+				StatusChange(STATUS.HALF, "up yin in buy", sDateTime);
 				sell_position = 5;
 			}
 			else if (this.buy_reason == CONTIDION_MA_BOLL_UP && 
 					this.num_first_yin == 1 &&
 					this.is_down_last_open) {
-				this.curt_status = STATUS.HALF;
-				log.info("TransProcess: time:" + sDateTime + ", price:" + df1.format(this.curt_price) + ", sell for down last open in buy, status from " + STATUS.BULL + " to " + STATUS.HALF);
+				StatusChange(STATUS.HALF, "down last open in buy", sDateTime);
 				sell_position = 5;
 			}
 		}
 		else if (this.curt_status == STATUS.HALF) {
 			if (this.is_dead_cross) {
-				this.curt_status	= STATUS.READY;
-				log.info("TransProcess: time:" + sDateTime + ", price:" + df1.format(this.curt_price) + ", sell for dead_cross in half, status from " + STATUS.HALF + " to " + STATUS.READY);
+				StatusChange(STATUS.READY, "dead_cross in half", sDateTime);
 				sell_position = 10;
 			}
 			
@@ -537,22 +542,25 @@ public class BTCTransStrategy3 implements BTCTransStrategy {
 //			}
 		
 			else if (this.is_boll_bbi_or_mid_down) {
-				this.curt_status	= STATUS.READY;
-				log.info("TransProcess: time:" + sDateTime + ", price:" + df1.format(this.curt_price) + ", sell for bbi_or_mid_down in half, status from " + STATUS.HALF + " to " + STATUS.READY);
+				StatusChange(STATUS.READY, "bbi_or_mid_down in half", sDateTime);
 				sell_position = 10;
 			}
 			
 			else if (this.is_macd_top) {
-				this.curt_status	= STATUS.READY;
-				log.info("TransProcess: time:" + sDateTime + ", price:" + df1.format(this.curt_price) + ", sell for macd_top in half, status from " + STATUS.HALF + " to " + STATUS.READY);
+				StatusChange(STATUS.READY, "macd_top in half", sDateTime);
 				sell_position = 10;
 			}
 			
 			else if (this.is_macd_down) {
-				this.curt_status	= STATUS.READY;
-				log.info("TransProcess: time:" + sDateTime + ", price:" + df1.format(this.curt_price) + ", sell for macd_down in half, status from " + STATUS.HALF + " to " + STATUS.READY);
+				StatusChange(STATUS.READY, "macd_down in half", sDateTime);
 				sell_position = 10;
 			}
+		}
+		
+		//止损
+		if (this.is_zhisun == true) {
+			StatusChange(STATUS.READY, "zhisun", sDateTime);
+			sell_position = 10;
 		}
 		
 		if (sell_position > 0) {
@@ -596,6 +604,8 @@ public class BTCTransStrategy3 implements BTCTransStrategy {
 		
 		is_up_yin = false;
 		is_down_last_open = false;
+		
+		is_zhisun = false;
 	}
 	
 }

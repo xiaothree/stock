@@ -36,7 +36,7 @@ public class BTCTradeAction {
 			if (count == 5) {
 				break;
 			}
-			Thread.sleep(5000);
+			Thread.sleep(3000);
 			user_info = btc_api.ApiUserInfo();
 		}
 		return user_info;

@@ -101,7 +101,7 @@ public static final Log log = LogFactory.getLog(BTCTransStrategy2.class);
 		
 	}
 	
-	public void CheckPoint(BTCData btc_data) {
+	public void CheckPoint(double buy_price, BTCData btc_data) {
 		
 		BTCTotalRecord record	= btc_data.BTCRecordOptGetByCycle(0, null);
 		BTCTotalRecord record_1cycle_before	= btc_data.BTCRecordOptGetByCycle(1, null);

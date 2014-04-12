@@ -532,7 +532,7 @@ public class BTCTransSystem {
 	private void ProcTrans(String sDateTime) {
 		
 		this.btc_trans_stra.InitPoint();
-		this.btc_trans_stra.CheckPoint(this.btc_data);
+		this.btc_trans_stra.CheckPoint(this.btc_buy_price, this.btc_data);
 		
 		BTCTotalRecord record	= this.btc_data.BTCRecordOptGetByCycle(0, null);
 		
@@ -544,7 +544,21 @@ public class BTCTransSystem {
 			int ret = this.btc_trans_stra.IsBuy(sDateTime);
 			if (ret != 0) {
 				if (this.BuyAction(sDateTime, record.close, ret) != true) {
-					this.btc_trans_stra.BuyReset();
+					//再次验证是否仓位中有已买入的btc
+					try {
+						UserInfo user_info = this.btc_trade_action.DoUserInfo();
+						if (user_info == null) {
+							log.error("get account info failed!");
+							System.exit(0);
+						}
+						user_info.Show();
+						if (user_info.btc == 0) {
+							this.btc_trans_stra.BuyReset();
+						}
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
 				}
 			}
 		}

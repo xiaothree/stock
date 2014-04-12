@@ -75,7 +75,7 @@ public class BTCTransStrategy1 implements BTCTransStrategy {
 		this.is_boll_mid_down	= false;
 	}
 	
-	public void CheckPoint(BTCData btc_data) {
+	public void CheckPoint(double buy_price, BTCData btc_data) {
 		BTCTotalRecord record	= btc_data.BTCRecordOptGetByCycle(0, null);
 		BTCTotalRecord record_1cycle_before	= btc_data.BTCRecordOptGetByCycle(1, null);
 		BTCTotalRecord record_2cycle_before	= btc_data.BTCRecordOptGetByCycle(2, null);
