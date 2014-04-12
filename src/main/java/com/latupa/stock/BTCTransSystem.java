@@ -109,9 +109,6 @@ public class BTCTransSystem {
 	//交易策略
 	public BTCTransStrategy3 btc_trans_stra = new BTCTransStrategy3();
 	
-	//底层api
-	public BTCApi btc_api = new BTCApi();
-	
 	//交易接口
 	public BTCTradeAction btc_trade_action = new BTCTradeAction();
 	
@@ -421,7 +418,7 @@ public class BTCTransSystem {
 					this.btc_trans_rec.InitTable(this.btc_trans_postfix);
 					
 					//获取当前资金
-					UserInfo user_info	= this.btc_api.ApiUserInfo();
+					UserInfo user_info	= this.btc_trade_action.DoUserInfo();
 					if (user_info != null) {
 						this.btc_amount_init	= user_info.cny;
 						this.btc_curt_amount	= user_info.cny;
@@ -454,7 +451,7 @@ public class BTCTransSystem {
 					this.btc_trans_stra.curt_status = BTCTransStrategy3.STATUS.READY;
 					if (tr_list != null) {
 						//获取当前资金
-						UserInfo user_info	= this.btc_api.ApiUserInfo();
+						UserInfo user_info	= this.btc_trade_action.DoUserInfo();
 						if (user_info != null) {
 							this.btc_amount_init	= user_info.cny;
 							this.btc_curt_amount	= user_info.cny;
@@ -500,7 +497,6 @@ public class BTCTransSystem {
 			try {
 				if (this.mode == MODE.ACTUAL && this.trade_mode == true) {//实盘（真实交易）
 					user_info = this.btc_trade_action.DoUserInfo();
-					Thread.sleep(10000);
 				}
 				else {
 					user_info = new UserInfo();

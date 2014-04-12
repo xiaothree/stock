@@ -39,6 +39,7 @@ public class BTCTradeAction {
 			Thread.sleep(3000);
 			user_info = btc_api.ApiUserInfo();
 		}
+		Thread.sleep(3000);
 		return user_info;
 	}
 	
@@ -278,8 +279,6 @@ public class BTCTradeAction {
 		//如果没有持有中的数量，则直接返回
 		if (user_info.btc == 0) {
 			log.info("no quantity to sell");
-			//避免过于频繁
-			Thread.sleep(5000);
 			return tr_list;
 		}
 		
