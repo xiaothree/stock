@@ -222,6 +222,9 @@ public class BTCTransStrategy3 implements BTCTransStrategy {
 	//止损
 	public boolean is_zhisun = false;
 	
+	//高于60日均线
+	public boolean is_up_ma60 = false;
+	
 	public BTCTransStrategy3() {
 	}
 	
@@ -245,7 +248,8 @@ public class BTCTransStrategy3 implements BTCTransStrategy {
 				"is_up_yin:" + this.is_up_yin + ", " +
 				"is_down_last_open:" + this.is_down_last_open + ", " +
 				"num_first_yin:" + this.num_first_yin + ", " +
-				"is_zhisun:" + this.is_zhisun;
+				"is_zhisun:" + this.is_zhisun + ", " +
+				"is_up_ma60:" + this.is_up_ma60;
 		return str;
 	}
 	
@@ -261,6 +265,12 @@ public class BTCTransStrategy3 implements BTCTransStrategy {
 		log.info("record1:" + record_1cycle_before.toString());
 		log.info("record2:" + record_2cycle_before.toString());
 		log.info("record5:" + record_2cycle_before.toString());
+		
+		
+		//高于60日均线
+		if (record.close > record.ma_record.ma60) {
+			this.is_up_ma60 = true;
+		}
 		
 		//均线支撑
 		if (record.ma_record.ma5 >= record.ma_record.ma10 && 
@@ -435,8 +445,7 @@ public class BTCTransStrategy3 implements BTCTransStrategy {
 			}
 		}
 		
-		if (this.is_macd_up && this.is_last_boll_mid_down) {
-//		if (this.is_macd_up) {
+		if (this.is_macd_up && (this.is_last_boll_mid_down || this.is_ma_bull_arrange)) {
 			ret = CONTIDION_MID_DOWN_MACD_UP;
 			is_buy	= true;
 			this.curt_status	= STATUS.BUYIN;
@@ -606,6 +615,8 @@ public class BTCTransStrategy3 implements BTCTransStrategy {
 		is_down_last_open = false;
 		
 		is_zhisun = false;
+		
+		is_up_ma60 = false;
 	}
 	
 }
