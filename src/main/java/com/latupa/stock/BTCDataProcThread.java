@@ -8,8 +8,6 @@ import java.util.Date;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import com.latupa.stock.BTCTransSystem.MODE;
-
 /**
  * 针对抓取到的数据构造K线，同时计算指标值，更新到内存和数据库中
  * @author latupa
