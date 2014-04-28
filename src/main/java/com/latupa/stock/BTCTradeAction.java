@@ -151,7 +151,14 @@ public class BTCTradeAction {
 		return trade_ret;
 	}
 	
-	public ArrayList<TradeRet> DoBuy(int invest_position) throws InterruptedException {
+	/**
+	 * 
+	 * @param invest_position
+	 * @param price 当前价格
+	 * @return
+	 * @throws InterruptedException
+	 */
+	public ArrayList<TradeRet> DoBuy(int invest_position, double price) throws InterruptedException {
 		
 		ArrayList<TradeRet> tr_list = new ArrayList<TradeRet>();
 		
@@ -182,9 +189,10 @@ public class BTCTradeAction {
 			ticker.Show();
 			
 			//计算委托价格
-			double buy_price	= (ticker.buy + ticker.sell) / 2;
+//			double buy_price	= (ticker.buy + ticker.sell) / 2;
 //			double buy_price	= (ticker.buy + ticker.sell) / 2 + BTCApi.TRADE_DIFF;
-			//double buy_price	= ticker.buy + BTCApi.TRADE_DIFF;
+//			double buy_price	= ticker.buy + BTCApi.TRADE_DIFF;
+			double buy_price	= price * 1.003;
 			double buy_quantity	= invest_cny / (buy_price + BTCApi.TRADE_DIFF);
 			
 			//委托买单

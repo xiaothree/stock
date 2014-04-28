@@ -53,6 +53,16 @@ public class DBInst {
                         e.printStackTrace();
                 }
         }
+        
+        void closeSQL(ResultSet rs) {
+        	try {
+				rs.close();
+				statement.close();
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+        }
 
         // execute selection language
         ResultSet selectSQL(String sql) {

@@ -196,11 +196,14 @@ public class BTCTransSystem {
 				int status		= rs.getInt("status");
 				String start	= rs.getString("start");
 				String end		= rs.getString("end");
+				int position	= rs.getInt("position");
+				
+				this.btc_data.dbInst.closeSQL(rs);
 				
 				if (status == 1) {
 					if (sDateTime.substring(8, 14).compareTo(start) >= 0 &&
 						sDateTime.substring(8, 14).compareTo(end) <= 0) {
-						this.btc_invest_position = rs.getInt("position");
+						this.btc_invest_position = position;
 					}
 					else {
 						this.btc_invest_position = 10;
@@ -214,8 +217,6 @@ public class BTCTransSystem {
 					return false;
 				}
 			}
-			
-			rs.close();
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -337,7 +338,7 @@ public class BTCTransSystem {
 		
 		if (this.mode == MODE.ACTUAL && this.trade_mode == true) {//实盘（真实交易）
 			try {
-				ArrayList<TradeRet> tr_list = this.btc_trade_action.DoBuy(this.btc_invest_position);
+				ArrayList<TradeRet> tr_list = this.btc_trade_action.DoBuy(this.btc_invest_position, price);
 				//买入成功
 				if (tr_list != null && tr_list.size() > 0) {
 					

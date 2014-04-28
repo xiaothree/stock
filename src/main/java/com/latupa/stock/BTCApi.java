@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.MalformedURLException;
+import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.security.MessageDigest;
@@ -135,6 +136,7 @@ public class BTCApi {
             connection.setRequestProperty("connection", "Keep-Alive");
             connection.setRequestProperty("user-agent",
                     "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1;SV1)");
+            connection.setConnectTimeout(5000);
             // 建立实际的连接
             connection.connect();
             // 获取所有响应头字段
@@ -150,6 +152,8 @@ public class BTCApi {
             while ((line = in.readLine()) != null) {
                 result += line;
             }
+        } catch (SocketTimeoutException e) {
+        	log.error("发送GET请求超时！", e);
         } catch (Exception e) {
             log.error("发送GET请求出现异常！", e);
         }

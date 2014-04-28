@@ -283,7 +283,7 @@ public class BTCData {
 				this.b_record_map.put(time, record);
 			}
 			
-			rs.close();
+			dbInst.closeSQL(rs);
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -569,7 +569,7 @@ public class BTCData {
 				this.update_mock_map.put(day, close);
 			}
 			
-			rs.close();
+			dbInst.closeSQL(rs);
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -671,7 +671,7 @@ public class BTCData {
 				this.btc_mock_map.put(time, record);
 			}
 			
-			rs.close();
+			dbInst.closeSQL(rs);
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
