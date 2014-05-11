@@ -155,10 +155,13 @@ public class BTCTradeAction {
 	 * 
 	 * @param invest_position
 	 * @param price 当前价格
+	 * @param data_cycle K线周期
 	 * @return
 	 * @throws InterruptedException
 	 */
-	public ArrayList<TradeRet> DoBuy(int invest_position, double price) throws InterruptedException {
+	public ArrayList<TradeRet> DoBuy(int invest_position, double price, int data_cycle) throws InterruptedException {
+		
+		long start_stamp_sec = System.currentTimeMillis() / 1000;
 		
 		ArrayList<TradeRet> tr_list = new ArrayList<TradeRet>();
 		
@@ -175,9 +178,23 @@ public class BTCTradeAction {
 		double invest_cny = (invest_position == 10) ? user_info.cny : (user_info.cny * invest_position / 10);
 		log.info("invest_cny:" + invest_cny);
 		
+		double buy_price_max = price * 1.003;
+		
 		while (true) {
-			buy_count++;
 			
+			long curt_stamp_sec = System.currentTimeMillis() / 1000;
+			if ((curt_stamp_sec - start_stamp_sec) > (data_cycle * 0.8)) {//整个买入时间消耗不能多于K线周期，确保有时间处理下一条K线
+				if (tr_list.size() > 0) {//如果之前分批买入有成功的，那么也返回成功
+					log.info("cost " + (curt_stamp_sec - start_stamp_sec) + "secs, has buyed buy_total_quantity and over " + buy_count + " times, finish");
+					return tr_list;
+				}
+				else {
+					log.error("force buy failed!");
+					return null;
+				}
+			}
+			
+			buy_count++;
 			log.info("buy for " + buy_count + " times");
 			
 			//获取当前买一价
@@ -189,10 +206,16 @@ public class BTCTradeAction {
 			ticker.Show();
 			
 			//计算委托价格
-//			double buy_price	= (ticker.buy + ticker.sell) / 2;
+			double buy_price	= (ticker.buy + ticker.sell) / 2;
+			
+			if (buy_price > buy_price_max) {//超过买入预期最高价
+				Thread.sleep(3000);
+				continue;
+			}
+				
 //			double buy_price	= (ticker.buy + ticker.sell) / 2 + BTCApi.TRADE_DIFF;
 //			double buy_price	= ticker.buy + BTCApi.TRADE_DIFF;
-			double buy_price	= price * 1.003;
+			
 			double buy_quantity	= invest_cny / (buy_price + BTCApi.TRADE_DIFF);
 			
 			//委托买单
@@ -250,18 +273,6 @@ public class BTCTradeAction {
 			if (ret != true) {
 				log.error("cancel trade failed!");
 				return null;
-			}
-			
-			//达到5次就结束
-			if (buy_count >= 5) {
-				if (tr_list.size() > 0) {//如果之前分批买入有成功的，那么也返回成功
-					log.info("has buyed buy_total_quantity and over " + buy_count + " times, finish");
-					return tr_list;
-				}
-				else {
-					log.error("force buy failed!");
-					return null;
-				}
 			}
 		}
 	}
