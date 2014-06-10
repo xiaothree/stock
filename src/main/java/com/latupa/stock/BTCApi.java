@@ -22,14 +22,12 @@ import org.apache.commons.logging.LogFactory;
 class Ticker {
 	public static final Log log = LogFactory.getLog(Ticker.class);
 	
-	double high;
-	double low;
-	double buy;
-	double sell;
-	double last;
-	double vol;
+	double bid;	//买入价
+	double ask;	//卖出价
+	String instrument;
+	String time;
 	public void Show() {
-		log.info("high:" + high + ", low:" + low + ", buy:" + buy + ", sell:" + sell + ", last:" + last + ", vol:" + vol);
+		log.info("instrument:" + instrument + ", time:" + time.toString() + ", bid:" + bid + ", ask:" + ask);
 	}
 }
 
@@ -89,21 +87,20 @@ class TradeRet {
  * @author latupa
  *
  * TODO
- * 1. 完善api调用日志记录		DONE
- * 2. 剥离买卖逻辑到BTCTransAction类中	DONE
- * 3. 买卖操作独立线程处理	CANCEL（因为涉及到同步等问题，考虑到K线周期不会太短，先在同一个线程中处理）
- * 4. 买卖操作返回实际价格和金额	DONE
  */
 public class BTCApi {
 	
 	public static final Log log = LogFactory.getLog(BTCApi.class);
 	
-	public String secretKey;
+	public static final String URL_SANDBOX  = "http://api-sandbox.oanda.com";
+	public static final String URL_PRACTICE = "https://api-fxpractice.oanda.com";
+	public static final String URL_TRADE	= "https://api-fxtrade.oanda.com";
+	
+	public String token;
 	public String partner;
 	
 	//数据库配置文件
-	public static final String ACTION_FILE_DIR = "src/main/resources/";
-	public static final String action_file = "action.info";
+	public static final String ACTION_FILE = "token.info";
 	
 	//交易委托的差价
 	public static final int TRADE_DIFF = 3;
@@ -136,6 +133,7 @@ public class BTCApi {
             connection.setRequestProperty("connection", "Keep-Alive");
             connection.setRequestProperty("user-agent",
                     "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1;SV1)");
+            connection.setRequestProperty("Authorization", "Bearer " + this.token);
             connection.setConnectTimeout(5000);
             // 建立实际的连接
             connection.connect();
@@ -192,6 +190,7 @@ public class BTCApi {
             conn.setRequestProperty("connection", "Keep-Alive");
             conn.setRequestProperty("user-agent",
                     "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1;SV1)");
+            conn.setRequestProperty("Authorization", "Bearer " + this.token);
             // 发送POST请求必须设置如下两行
             conn.setDoOutput(true);
             conn.setDoInput(true);
@@ -259,16 +258,8 @@ public class BTCApi {
 			String value	= para.get(key);
 			str_para	+= key + "=" + value + "&";
 		}
-		log.debug("para:" + str_para);
-		
-		String str_para_tmp	= str_para.substring(0, str_para.length() - 1) + this.secretKey;
-		log.debug("para_tmp:" + str_para_tmp);
-		
-		String md5	= md5(str_para_tmp).toUpperCase();
-		log.debug("md5:" + md5);
-		
-		String ret	= sendPost(url, str_para + "sign=" + md5);
-		log.debug("json:" + ret);
+		String ret = str_para.substring(0, str_para.length() - 1);
+		log.debug("para:" + ret);
 		
 		return ret;
 	}
@@ -386,31 +377,30 @@ public class BTCApi {
 	 */
 	public Ticker ApiTicker() {
 		
-		String url = "https://www.okcoin.com/api/ticker.do";
-		String ret	= sendGet(url, "");
+		String ret = sendGet(URL_PRACTICE, "instruments=EUR_USD");
 		
 		if (ret == "") {
-			log.error("call failed!" + url );
+			log.error("call failed! " + URL_PRACTICE);
 			return null;
 		}
 		
 		try {
 			JSONObject jsonObj = JSONObject.fromObject(ret);
-			if (jsonObj.has("ticker")) {
+			if (jsonObj.has("prices")) {
 				Ticker ticker	= new Ticker();
-				JSONObject jsonObj1	= jsonObj.getJSONObject("ticker");
+				JSONObject jsonObj1	= jsonObj.getJSONObject("prices");
 				
-				ticker.high	= jsonObj1.getDouble("high");
-				ticker.low	= jsonObj1.getDouble("low");
-				ticker.buy	= jsonObj1.getDouble("buy");
-				ticker.sell	= jsonObj1.getDouble("sell");
-				ticker.last	= jsonObj1.getDouble("last");
-				ticker.vol	= jsonObj1.getDouble("vol");
+				ticker.instrument	= jsonObj1.getString("instrument");
+				ticker.time	= jsonObj1.getString("time");
+				ticker.bid	= jsonObj1.getDouble("bid");
+				ticker.ask	= jsonObj1.getDouble("ask");
 				
 				return ticker;
 			}
-			else {
-				log.error("parse json failed! json:" + ret);
+			else if (jsonObj.has("code")){
+				int error_code = jsonObj.getInt("code");
+				String error_info = jsonObj.getString("message");
+				log.error("parse json failed! error_code:" + error_code + ", error_info:" + error_info);
 			}
 		}
 		catch (Exception e) {
@@ -628,7 +618,7 @@ public class BTCApi {
 	public void ReadInfo() {
 		
 		try {
-			InputStream fis			= BTCApi.class.getClassLoader().getResourceAsStream(action_file);
+			InputStream fis			= BTCApi.class.getClassLoader().getResourceAsStream(ACTION_FILE);
 	        InputStreamReader isr	= new InputStreamReader(fis, "utf8");
 	        BufferedReader br		= new BufferedReader(isr);
 	        
@@ -639,20 +629,16 @@ public class BTCApi {
 	        fis.close();
 	        
 	        if (line != null) {
-	        	String arrs[] = line.split(" ");
-	        	
-	        	this.secretKey	= arrs[0];
-	        	this.partner	= arrs[1];
-	        	
+	        	this.token = line;
 	        	return;
 	        }
 	        else {
-	        	log.error("read " + action_file + " is null!");
+	        	log.error("read " + ACTION_FILE + " is null!");
 	        	return;
 	        }
 		}
 		catch (Exception e) {
-			log.error("read " + action_file + " failed!", e);
+			log.error("read " + ACTION_FILE + " failed!", e);
 			return;
 		}
 	}
@@ -663,16 +649,18 @@ public class BTCApi {
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 		BTCApi btc_api = new BTCApi();
-		String order_id = btc_api.ApiTrade("buy", 4955, 1);
+		Ticker ticker = btc_api.ApiTicker();
+		ticker.toString();
+//		String order_id = btc_api.ApiTrade("buy", 4955, 1);
 		try {
 			Thread.sleep(5000);
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		boolean ret = btc_api.ApiCancelOrder(order_id);
-		System.out.println("ret:" + ret);
-		btc_api.ApiGetOrder(order_id);
+//		boolean ret = btc_api.ApiCancelOrder(order_id);
+//		System.out.println("ret:" + ret);
+//		btc_api.ApiGetOrder(order_id);
 	}
 }
 
