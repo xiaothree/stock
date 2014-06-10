@@ -262,7 +262,7 @@ public class BTCTransStrategy3 implements BTCTransStrategy {
 		return str;
 	}
 	
-	public void CheckPoint(double buy_price, BTCData btc_data) {
+	public void CheckPoint(double buy_price, BTCData btc_data, String sDateTime) {
 		
 		BTCTotalRecord record	= btc_data.BTCRecordOptGetByCycle(0, null);
 		BTCTotalRecord record_1cycle_before	= btc_data.BTCRecordOptGetByCycle(1, null);

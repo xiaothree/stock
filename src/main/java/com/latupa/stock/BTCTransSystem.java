@@ -11,6 +11,8 @@ import java.util.Date;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.latupa.stock.BTCTransStrategy4.STATUS;
+
 /**
  * BTC交易系统
  * @author latupa
@@ -107,7 +109,7 @@ public class BTCTransSystem {
 	public BTCFunc btc_func = new BTCFunc();
 	
 	//交易策略
-	public BTCTransStrategy3 btc_trans_stra = new BTCTransStrategy3();
+	public BTCTransStrategy4 btc_trans_stra = new BTCTransStrategy4();
 	
 	//交易接口
 	public BTCTradeAction btc_trade_action = new BTCTradeAction();
@@ -284,9 +286,8 @@ public class BTCTransSystem {
 			
 			
 //			this.btc_profit				+= ((this.btc_sell_price - this.btc_buy_price) * sell_quantity); 
-//			this.btc_curt_amount		+= sell_volumn;
-			
 			this.btc_profit				+= (sell_volumn - this.btc_buy_price * sell_quantity); 
+			
 			this.btc_curt_amount		+= sell_volumn;
 		}
 		
@@ -334,6 +335,8 @@ public class BTCTransSystem {
 			
 			//初始化
 			this.btc_profit	= 0;
+			this.btc_buy_price = 0;
+			
 		}	
 	}
 	
@@ -464,7 +467,7 @@ public class BTCTransSystem {
 					
 					//卖出当前所有仓位
 					ArrayList<TradeRet> tr_list = this.btc_trade_action.DoSell(10);
-					this.btc_trans_stra.curt_status = BTCTransStrategy3.STATUS.READY;
+					this.btc_trans_stra.curt_status = BTCTransStrategy4.STATUS.READY;
 					if (tr_list != null) {
 						//获取当前资金
 						UserInfo user_info	= this.btc_trade_action.DoUserInfo();
@@ -544,14 +547,14 @@ public class BTCTransSystem {
 	private void ProcTrans(String sDateTime) {
 		
 		this.btc_trans_stra.InitPoint();
-		this.btc_trans_stra.CheckPoint(this.btc_buy_price, this.btc_data);
+		this.btc_trans_stra.CheckPoint(this.btc_buy_price, this.btc_data, sDateTime);
 		
 		BTCTotalRecord record	= this.btc_data.BTCRecordOptGetByCycle(0, null);
 		
 		RecordForCycle(sDateTime, record);
 		
-		//如果还未入场，则判断是否要入场
-		if (this.btc_trans_stra.curt_status == BTCTransStrategy3.STATUS.READY) {
+		//如果还未满仓，则判断是否要入场
+		if (this.btc_trans_stra.curt_status != BTCTransStrategy4.STATUS.BUYIN) {
 			
 			int ret = this.btc_trans_stra.IsBuy(sDateTime);
 			if (ret != 0) {
@@ -574,8 +577,9 @@ public class BTCTransSystem {
 				}
 			}
 		}
+		
 		//如果已入场，则判断是否要出场
-		else if (this.btc_trans_stra.curt_status != BTCTransStrategy3.STATUS.READY) {
+		if (this.btc_trans_stra.curt_status != BTCTransStrategy4.STATUS.READY) {
 			
 			//判断是否要出场
 			int sell_position = this.btc_trans_stra.IsSell(sDateTime);

@@ -44,6 +44,9 @@ public class BTCTransRecord {
 		
 		dbInst.updateSQL(sql);
 		
+		sql = "truncate table " + table_name;
+		dbInst.updateSQL(sql);
+		
 		table_name = BTC_TRANS_DETAIL_TABLE + "__" + postfix;
 		sql = "create table if not exists " + table_name + 
 				"(`time` DATETIME not null default '0000-00-00 00:00:00', " +
@@ -54,6 +57,9 @@ public class BTCTransRecord {
 				"PRIMARY KEY (`time`)" +
 				") ENGINE=InnoDB DEFAULT CHARSET=utf8";	
 
+		dbInst.updateSQL(sql);
+		
+		sql = "truncate table " + table_name;
 		dbInst.updateSQL(sql);
 	}
 	
