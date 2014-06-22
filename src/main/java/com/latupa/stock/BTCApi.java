@@ -11,8 +11,14 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.TimeZone;
 import java.util.TreeMap;
 
+import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
 import org.apache.commons.logging.Log;
@@ -26,8 +32,9 @@ class Ticker {
 	double ask;	//卖出价
 	String instrument;
 	String time;
-	public void Show() {
-		log.info("instrument:" + instrument + ", time:" + time.toString() + ", bid:" + bid + ", ask:" + ask);
+	public String toString() {
+		String str = "instrument:" + instrument + ", time:" + time.toString() + ", bid:" + bid + ", ask:" + ask;
+		return str;
 	}
 }
 
@@ -138,11 +145,11 @@ public class BTCApi {
             // 建立实际的连接
             connection.connect();
             // 获取所有响应头字段
-//            Map<String, List<String>> map = connection.getHeaderFields();
+            Map<String, List<String>> map = connection.getHeaderFields();
             // 遍历所有的响应头字段
-//            for (String key : map.keySet()) {
-//                System.out.println(key + "--->" + map.get(key));
-//            }
+            for (String key : map.keySet()) {
+                log.debug(key + "--->" + map.get(key));
+            }
             // 定义 BufferedReader输入流来读取URL的响应
             in = new BufferedReader(new InputStreamReader(
                     connection.getInputStream()));
@@ -377,7 +384,8 @@ public class BTCApi {
 	 */
 	public Ticker ApiTicker() {
 		
-		String ret = sendGet(URL_PRACTICE, "instruments=EUR_USD");
+		String ret = sendGet(URL_PRACTICE + "/v1/prices", "instruments=EUR_USD");
+//		String ret = sendGet(URL_SANDBOX + "/v1/prices", "instruments=EUR_USD");
 		
 		if (ret == "") {
 			log.error("call failed! " + URL_PRACTICE);
@@ -388,12 +396,21 @@ public class BTCApi {
 			JSONObject jsonObj = JSONObject.fromObject(ret);
 			if (jsonObj.has("prices")) {
 				Ticker ticker	= new Ticker();
-				JSONObject jsonObj1	= jsonObj.getJSONObject("prices");
+				JSONArray jsonarray	= jsonObj.getJSONArray("prices");
+				
+				JSONObject jsonObj1 = (JSONObject)jsonarray.get(0);
 				
 				ticker.instrument	= jsonObj1.getString("instrument");
 				ticker.time	= jsonObj1.getString("time");
 				ticker.bid	= jsonObj1.getDouble("bid");
 				ticker.ask	= jsonObj1.getDouble("ask");
+				
+		        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.ms'Z'");
+		        Date date = sdf.parse(ticker.time);
+		        
+		        SimpleDateFormat sdf1 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+//		        String str = sdf.format(date);
+		        ticker.time = sdf1.format(date);
 				
 				return ticker;
 			}
@@ -650,7 +667,8 @@ public class BTCApi {
 		// TODO Auto-generated method stub
 		BTCApi btc_api = new BTCApi();
 		Ticker ticker = btc_api.ApiTicker();
-		ticker.toString();
+		String str = ticker.toString();
+		log.info(str);
 //		String order_id = btc_api.ApiTrade("buy", 4955, 1);
 		try {
 			Thread.sleep(5000);
