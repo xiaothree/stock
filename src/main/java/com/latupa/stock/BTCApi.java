@@ -12,7 +12,10 @@ import java.net.URLConnection;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
@@ -105,6 +108,8 @@ public class BTCApi {
 	
 	public String token;
 	public String partner;
+	
+	public ArrayList<String> pairs_list = new ArrayList<String>();
 	
 	//数据库配置文件
 	public static final String ACTION_FILE = "token.info";
@@ -382,37 +387,53 @@ public class BTCApi {
 	 * 获取行情接口
 	 * @return
 	 */
-	public Ticker ApiTicker() {
+	public HashMap<String, Ticker> ApiTicker() {
 		
-		String ret = sendGet(URL_PRACTICE + "/v1/prices", "instruments=EUR_USD");
-//		String ret = sendGet(URL_SANDBOX + "/v1/prices", "instruments=EUR_USD");
+		String str = "instruments=";
+		for (String pair : this.pairs_list) {
+			str = str + pair + "%2C";
+		}
+		str = str.substring(0, str.length() - 3);
+		log.info(str);
+		
+		String ret = sendGet(URL_PRACTICE + "/v1/prices", str);
+//		String ret = sendGet(URL_SANDBOX + "/v1/prices", str);
 		
 		if (ret == "") {
 			log.error("call failed! " + URL_PRACTICE);
 			return null;
 		}
 		
+		HashMap<String, Ticker> pair_map = new HashMap<String, Ticker>();
+		
 		try {
 			JSONObject jsonObj = JSONObject.fromObject(ret);
 			if (jsonObj.has("prices")) {
-				Ticker ticker	= new Ticker();
+				
 				JSONArray jsonarray	= jsonObj.getJSONArray("prices");
 				
-				JSONObject jsonObj1 = (JSONObject)jsonarray.get(0);
+				for (int i = 0; i < jsonarray.size(); i++) {
+				    JSONObject jsonObj1 = (JSONObject) jsonarray.get(i);
+				    
+				    Ticker ticker	= new Ticker();
+					ticker.instrument	= jsonObj1.getString("instrument");
+					ticker.time	= jsonObj1.getString("time");
+					ticker.bid	= jsonObj1.getDouble("bid");
+					ticker.ask	= jsonObj1.getDouble("ask");
+					
+					SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.ms'Z'");
+			        Date date = sdf.parse(ticker.time);
+			        
+			        SimpleDateFormat sdf1 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+//			        String str = sdf.format(date);
+			        ticker.time = sdf1.format(date);
+			        
+			        log.info(ticker.toString());
+			        
+			        pair_map.put(ticker.instrument, ticker);
+				}
 				
-				ticker.instrument	= jsonObj1.getString("instrument");
-				ticker.time	= jsonObj1.getString("time");
-				ticker.bid	= jsonObj1.getDouble("bid");
-				ticker.ask	= jsonObj1.getDouble("ask");
-				
-		        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.ms'Z'");
-		        Date date = sdf.parse(ticker.time);
-		        
-		        SimpleDateFormat sdf1 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-//		        String str = sdf.format(date);
-		        ticker.time = sdf1.format(date);
-				
-				return ticker;
+				return pair_map;
 			}
 			else if (jsonObj.has("code")){
 				int error_code = jsonObj.getInt("code");
@@ -641,18 +662,37 @@ public class BTCApi {
 	        
 	        String line = br.readLine();
 	        
-	        br.close();
-	        isr.close();
-	        fis.close();
-	        
 	        if (line != null) {
-	        	this.token = line;
-	        	return;
+	        	String str_pairs = line;
+	        	String pairs[] = str_pairs.split(",");
+	        	for (String pair : pairs) {
+	        		this.pairs_list.add(pair);
+	        	}
 	        }
 	        else {
 	        	log.error("read " + ACTION_FILE + " is null!");
+	        	br.close();
+		        isr.close();
+		        fis.close();
 	        	return;
 	        }
+	        
+	        line = br.readLine();
+	        
+	        if (line != null) {
+	        	this.token = line;
+	        }
+	        else {
+	        	log.error("read " + ACTION_FILE + " is null!");
+	        	br.close();
+		        isr.close();
+		        fis.close();
+	        	return;
+	        }
+	        
+	        br.close();
+	        isr.close();
+	        fis.close();
 		}
 		catch (Exception e) {
 			log.error("read " + ACTION_FILE + " failed!", e);
@@ -666,9 +706,7 @@ public class BTCApi {
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 		BTCApi btc_api = new BTCApi();
-		Ticker ticker = btc_api.ApiTicker();
-		String str = ticker.toString();
-		log.info(str);
+		btc_api.ApiTicker();
 //		String order_id = btc_api.ApiTrade("buy", 4955, 1);
 		try {
 			Thread.sleep(5000);
