@@ -181,7 +181,5 @@ public class BTCDataProcThread extends Thread {
 		BTCData btc_data = new BTCData(data_cycle);
 		BTCDataProcThread btc_data_proc = new BTCDataProcThread(btc_data, data_cycle);
 		btc_data_proc.ModifyHistoryData(time_s, time_e);
-		
 	}
-
 }
