@@ -22,6 +22,8 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.conn.ssl.AllowAllHostnameVerifier;
+import org.apache.http.conn.ssl.SSLSocketFactory;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.util.EntityUtils;
@@ -138,7 +140,7 @@ public class BTCApi {
 		
 		String urlNameString = url + "?" + param;
 		String result = "";
-
+		
         try {
             HttpUriRequest httpGet = new HttpGet(urlNameString);
 
@@ -354,7 +356,7 @@ public class BTCApi {
 		log.info("start fetch web");
 		try {
 			
-            url = new URL("https://www.okcoin.com/market.do");
+            url = new URL("https://www.okcoin.cn/market.do");
             
     		InputStream in = url.openStream();
     		BufferedReader bin = new BufferedReader(new InputStreamReader(in, "utf8"));
@@ -384,7 +386,7 @@ public class BTCApi {
 		URL url = null;
 		double last = 0;
 		try {
-			url = new URL("https://www.okcoin.com/api/ticker.do");
+			url = new URL("https://www.okcoin.cn/api/ticker.do");
 		
 			InputStream in = url.openStream();
 			BufferedReader bin = new BufferedReader(new InputStreamReader(in, "utf8"));
@@ -441,7 +443,7 @@ public class BTCApi {
 	 */
 	public Ticker ApiTicker() {
 		
-		String url = "https://www.okcoin.com/api/ticker.do";
+		String url = "https://www.okcoin.cn/api/ticker.do";
 		String ret = "";
 		try {
 			ret = sendGet(url, "");
@@ -489,7 +491,7 @@ public class BTCApi {
 	 * @param order_id
 	 */
 	public TradeRet ApiGetOrder(String order_id) {
-		String url = "https://www.okcoin.com/api/getorder.do";
+		String url = "https://www.okcoin.cn/api/getorder.do";
 		TreeMap<String, String> para = new TreeMap<String, String>();
 		para.put("partner", this.partner);
 		para.put("order_id", order_id);
@@ -552,7 +554,7 @@ public class BTCApi {
 	 * @return
 	 */
 	public boolean ApiCancelOrder(String order_id) {
-		String url = "https://www.okcoin.com/api/cancelorder.do";
+		String url = "https://www.okcoin.cn/api/cancelorder.do";
 		TreeMap<String, String> para = new TreeMap<String, String>();
 		para.put("partner", this.partner);
 		para.put("order_id", order_id);
@@ -600,7 +602,7 @@ public class BTCApi {
 	 * @return
 	 */
 	public String ApiTrade(String type, double price, double amount) {
-		String url = "https://www.okcoin.com/api/trade.do";
+		String url = "https://www.okcoin.cn/api/trade.do";
 		TreeMap<String, String> para = new TreeMap<String, String>();
 		para.put("partner", this.partner);
 		para.put("symbol", "btc_cny");
@@ -641,7 +643,7 @@ public class BTCApi {
 	 * 获取用户信息
 	 */
 	public UserInfo ApiUserInfo() {
-		String url = "https://www.okcoin.com/api/userinfo.do";
+		String url = "https://www.okcoin.cn/api/userinfo.do";
 		TreeMap<String, String> para = new TreeMap<String, String>();
 		para.put("partner", this.partner);
 		
